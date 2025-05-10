@@ -90,7 +90,7 @@ const TaggingConfiguration: React.FC = () => {
           <div className="flex-1 relative">
             <input
               type="text"
-              placeholder="Search by type or description..."
+              placeholder="Search by tag number or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -110,16 +110,16 @@ const TaggingConfiguration: React.FC = () => {
         {showFilters && (
           <div className="mt-4 grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tag No.</label>
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg p-2"
               >
-                <option value="all">All Types</option>
-                <option value="S">Solicitation</option>
-                <option value="P">Procurement</option>
-                <option value="C">Contract</option>
+                <option value="all">All Tag Numbers</option>
+                <option value="S">S</option>
+                <option value="P">P</option>
+                <option value="C">C</option>
               </select>
             </div>
           </div>
@@ -144,7 +144,7 @@ const TaggingConfiguration: React.FC = () => {
                     className="rounded border-gray-300"
                   />
                 </th>
-                <th className="text-left text-sm font-medium text-gray-600 p-4">Type</th>
+                <th className="text-left text-sm font-medium text-gray-600 p-4">Tag No.</th>
                 <th className="text-left text-sm font-medium text-gray-600 p-4">Description</th>
                 <th className="text-left text-sm font-medium text-gray-600 p-4">Next Number</th>
                 <th className="text-left text-sm font-medium text-gray-600 p-4">Total Used</th>
@@ -171,7 +171,7 @@ const TaggingConfiguration: React.FC = () => {
                   </td>
                   <td className="p-4">
                     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                      Type {tag.type}
+                      {tag.type}
                     </span>
                   </td>
                   <td className="p-4">{tag.description}</td>
@@ -233,12 +233,12 @@ const TaggingConfiguration: React.FC = () => {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tag No.</label>
                 <input
                   type="text"
                   value={newTag.type}
                   onChange={(e) => setNewTag({ ...newTag, type: e.target.value })}
-                  placeholder="Enter tag type (e.g., S)"
+                  placeholder="Enter tag number (e.g., S)"
                   maxLength={1}
                   className="w-full p-2 border border-gray-200 rounded-lg"
                 />
