@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Filter, Plus, Edit2, Trash2, Upload, X, Settings } from 'lucide-react';
+import TagImport from './TagImport';
 
 interface TagType {
   id: string;
