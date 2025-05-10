@@ -20,6 +20,7 @@ const TaggingConfiguration: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [selectedTag, setSelectedTag] = useState<TagType | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [tags, setTags] = useState<TagType[]>([
     {
       id: '1',
@@ -121,7 +122,7 @@ const TaggingConfiguration: React.FC = () => {
           <h2 className="text-lg font-semibold">Tag Type Configuration</h2>
           <div className="flex gap-2">
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={() => setShowImportModal(true)}
               className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
             >
               <Upload size={16} />
@@ -428,6 +429,29 @@ const TaggingConfiguration: React.FC = () => {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl mx-4">
+            <div className="flex justify-between items-center p-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold">Import Tag Data</h2>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <TagImport
+              onComplete={() => {
+                setShowImportModal(false);
+                // Refresh the tag list here
+              }}
+            />
           </div>
         </div>
       )}
