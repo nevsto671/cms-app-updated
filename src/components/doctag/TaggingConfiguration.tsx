@@ -4,6 +4,7 @@ import { Search, Filter, Plus, Edit2, Trash2, Upload, X, Settings } from 'lucide
 interface TagType {
   id: string;
   type: string;
+  number: number;
   description: string;
   nextNumber: number;
   totalUsed: number;
@@ -26,6 +27,7 @@ const TaggingConfiguration: React.FC = () => {
     {
       id: '1',
       type: 'S',
+      number: 1,
       description: 'Solicitation Documents',
       nextNumber: 15,
       totalUsed: 14,
@@ -34,6 +36,7 @@ const TaggingConfiguration: React.FC = () => {
     {
       id: '2',
       type: 'P',
+      number: 1,
       description: 'Procurement Documents',
       nextNumber: 8,
       totalUsed: 7,
@@ -42,6 +45,7 @@ const TaggingConfiguration: React.FC = () => {
     {
       id: '3',
       type: 'C',
+      number: 1,
       description: 'Contract Documents',
       nextNumber: 12,
       totalUsed: 11,
@@ -57,6 +61,8 @@ const TaggingConfiguration: React.FC = () => {
       setNewTag({ type: '', description: '', startingNumber: '' });
     }
   };
+
+  const formatTagNumber = (tag: TagType) => `${tag.type}${tag.number}`;
 
   return (
     <div className="space-y-6">
@@ -117,9 +123,9 @@ const TaggingConfiguration: React.FC = () => {
                 className="w-full border border-gray-200 rounded-lg p-2"
               >
                 <option value="all">All Tag Numbers</option>
-                <option value="S">S</option>
-                <option value="P">P</option>
-                <option value="C">C</option>
+                <option value="S">S Series</option>
+                <option value="P">P Series</option>
+                <option value="C">C Series</option>
               </select>
             </div>
           </div>
@@ -171,7 +177,7 @@ const TaggingConfiguration: React.FC = () => {
                   </td>
                   <td className="p-4">
                     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                      {tag.type}
+                      {formatTagNumber(tag)}
                     </span>
                   </td>
                   <td className="p-4">{tag.description}</td>
