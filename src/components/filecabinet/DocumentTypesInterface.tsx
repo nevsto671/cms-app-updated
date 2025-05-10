@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, FileText, File, Link, DollarSign, Briefcase, CheckSquare, ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronLeft, FileText, File, Link, DollarSign, Briefcase, CheckSquare, ChevronDown, ChevronRight, Plus, Copy, Trash2, ArrowRight, Search, Filter } from 'lucide-react';
 
 interface DocumentTypesInterfaceProps {
   onBack: () => void;
@@ -14,7 +14,9 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState('overview');
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(true);
   const [isFinancialExpanded, setIsFinancialExpanded] = useState(true);
   const [isNotesExpanded, setIsNotesExpanded] = useState(true);
@@ -41,6 +43,61 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
 
   return (
     <div className="h-full bg-white rounded-lg shadow-sm flex flex-col">
+      {/* Navigation Bar */}
+      <div className="bg-[#1c1f26] text-white px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onBack}
+            className="hover:bg-[#2a2f3a] p-1 rounded transition-colors"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <h1 className="text-lg font-semibold">File Cabinet | {vendorName}</h1>
+        </div>
+        <div className="flex gap-2">
+          <button className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 flex items-center gap-2">
+            <Plus size={16} />
+            New
+          </button>
+          <button className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 flex items-center gap-2">
+            <Copy size={16} />
+            Replicate
+          </button>
+          <button className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 flex items-center gap-2">
+            <Trash2 size={16} />
+            Delete
+          </button>
+          <button className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 flex items-center gap-2">
+            <ArrowRight size={16} />
+            Move
+          </button>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+          </div>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`p-2 border border-gray-200 rounded-lg hover:bg-gray-50 ${
+              showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : ''
+            }`}
+          >
+            <Filter size={20} />
+          </button>
+        </div>
+      </div>
+
       {/* Header Labels */}
       <div className="bg-[#1c1f26] text-white px-4 py-2 grid grid-cols-8 gap-4 text-sm">
         <div>Action Type</div>
