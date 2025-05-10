@@ -1,30 +1,35 @@
 import React, { useState } from 'react';
-import { Tag, Plus, Edit2, Trash2, Search, Filter, AlertCircle, Settings, RefreshCw } from 'lucide-react';
+import { Search, Filter, Plus, Edit2, Trash2, Upload, X, Settings } from 'lucide-react';
 
 interface TagType {
   id: string;
   symbol: string;
   type: string;
   description: string;
-  prefix: string;
   nextNumber: number;
   totalUsed: number;
   lastUsed: string;
 }
 
 const TaggingConfiguration: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('types');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterType, setFilterType] = useState('all');
+  const [newTag, setNewTag] = useState({
+    symbol: '',
+    type: '',
+    description: '',
+    startingNumber: ''
+  });
 
-  const mockTagTypes: TagType[] = [
+  const mockTags: TagType[] = [
     {
       id: '1',
       symbol: '⭐',
       type: 'S',
       description: 'Solicitation Documents',
-      prefix: 'S',
       nextNumber: 15,
       totalUsed: 14,
       lastUsed: '2025-05-10'
@@ -34,7 +39,6 @@ const TaggingConfiguration: React.FC = () => {
       symbol: '📦',
       type: 'P',
       description: 'Procurement Documents',
-      prefix: 'P',
       nextNumber: 8,
       totalUsed: 7,
       lastUsed: '2025-05-09'
@@ -44,112 +48,91 @@ const TaggingConfiguration: React.FC = () => {
       symbol: '📝',
       type: 'C',
       description: 'Contract Documents',
-      prefix: 'C',
       nextNumber: 12,
       totalUsed: 11,
       lastUsed: '2025-05-08'
     }
   ];
 
-  const handleSelectTag = (id: string) => {
-    setSelectedTags(prev =>
-      prev.includes(id) ? prev.filter(tagId => tagId !== id) : [...prev, id]
-    );
+  const handleAddTag = () => {
+    // Validate and add new tag
+    if (newTag.symbol && newTag.type && newTag.description) {
+      // Add tag logic here
+      setShowAddModal(false);
+      setNewTag({ symbol: '', type: '', description: '', startingNumber: '' });
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="flex space-x-4">
-          {[
-            { id: 'types', label: 'Tag Types', icon: Tag },
-            { id: 'numbering', label: 'Numbering Schemes', icon: Settings },
-            { id: 'validation', label: 'Validation Rules', icon: AlertCircle },
-            { id: 'batch', label: 'Batch Updates', icon: RefreshCw },
-            { id: 'analytics', label: 'Analytics', icon: Settings }
-          ].map((tab) => (
+      {/* Search & Filter Section */}
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Tag Type Configuration</h2>
+          <div className="flex gap-2">
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`pb-4 px-1 text-sm font-medium border-b-2 flex items-center gap-2 ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              onClick={() => setShowAddModal(true)}
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
             >
-              <tab.icon size={16} />
-              {tab.label}
+              <Upload size={16} />
+              Import Data
             </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Tag Type Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {mockTagTypes.map(tag => (
-          <div key={tag.id} className="bg-white p-4 rounded-lg border border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">{tag.symbol}</span>
-              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                Type {tag.type}
-              </span>
-            </div>
-            <h3 className="font-medium text-gray-900">{tag.description}</h3>
-            <div className="mt-2 space-y-1 text-sm text-gray-600">
-              <div>Next Number: {tag.nextNumber}</div>
-              <div>Total Used: {tag.totalUsed}</div>
-              <div>Last Used: {tag.lastUsed}</div>
-            </div>
+            <button 
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+              onClick={() => setShowAddModal(true)}
+            >
+              <Plus size={16} />
+              Add Tag Type
+            </button>
+            <button className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2">
+              <Trash2 size={16} />
+              Manage Database
+            </button>
           </div>
-        ))}
-      </div>
-
-      {/* Actions Bar */}
-      <div className="flex flex-wrap gap-4 items-center justify-between">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
-          >
-            <Plus size={16} />
-            Add Tag Type
-          </button>
-          <button
-            disabled={selectedTags.length === 0}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
-          >
-            <Edit2 size={16} />
-            Edit
-          </button>
-          <button
-            disabled={selectedTags.length === 0}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
-          >
-            <Trash2 size={16} />
-            Delete
-          </button>
         </div>
 
-        <div className="flex gap-2">
-          <div className="relative">
+        <div className="flex gap-4">
+          <div className="flex-1 relative">
             <input
               type="text"
-              placeholder="Search tags..."
+              placeholder="Search by symbol, type, or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
           </div>
-          <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50">
-            <Filter size={20} className="text-gray-600" />
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`p-2 border border-gray-200 rounded-lg hover:bg-gray-50 ${
+              showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : ''
+            }`}
+          >
+            <Filter size={20} />
           </button>
         </div>
+
+        {showFilters && (
+          <div className="mt-4 grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg p-2"
+              >
+                <option value="all">All Types</option>
+                <option value="S">Solicitation (⭐)</option>
+                <option value="P">Procurement (📦)</option>
+                <option value="C">Contract (📝)</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Tag List */}
-      <div className="bg-white rounded-lg border border-gray-200">
+      {/* Tag Types Table */}
+      <div className="bg-white rounded-lg shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -157,13 +140,11 @@ const TaggingConfiguration: React.FC = () => {
                 <th className="w-8 p-4">
                   <input
                     type="checkbox"
-                    checked={selectedTags.length === mockTagTypes.length}
+                    checked={selectedTags.length === mockTags.length}
                     onChange={() => {
-                      if (selectedTags.length === mockTagTypes.length) {
-                        setSelectedTags([]);
-                      } else {
-                        setSelectedTags(mockTagTypes.map(t => t.id));
-                      }
+                      setSelectedTags(
+                        selectedTags.length === mockTags.length ? [] : mockTags.map(t => t.id)
+                      );
                     }}
                     className="rounded border-gray-300"
                   />
@@ -178,19 +159,25 @@ const TaggingConfiguration: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {mockTagTypes.map((tag) => (
+              {mockTags.map((tag) => (
                 <tr key={tag.id} className="hover:bg-gray-50">
                   <td className="p-4">
                     <input
                       type="checkbox"
                       checked={selectedTags.includes(tag.id)}
-                      onChange={() => handleSelectTag(tag.id)}
+                      onChange={() => {
+                        setSelectedTags(prev =>
+                          prev.includes(tag.id)
+                            ? prev.filter(id => id !== tag.id)
+                            : [...prev, tag.id]
+                        );
+                      }}
                       className="rounded border-gray-300"
                     />
                   </td>
                   <td className="p-4 text-2xl">{tag.symbol}</td>
                   <td className="p-4">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                       Type {tag.type}
                     </span>
                   </td>
@@ -204,6 +191,9 @@ const TaggingConfiguration: React.FC = () => {
                         <Edit2 size={16} className="text-gray-600" />
                       </button>
                       <button className="p-1 hover:bg-gray-100 rounded">
+                        <Settings size={16} className="text-gray-600" />
+                      </button>
+                      <button className="p-1 hover:bg-gray-100 rounded">
                         <Trash2 size={16} className="text-gray-600" />
                       </button>
                     </div>
@@ -213,19 +203,38 @@ const TaggingConfiguration: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        <div className="p-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-600">
+              Showing {mockTags.length} tag types
+            </div>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 border border-gray-200 rounded hover:bg-gray-100">
+                Previous
+              </button>
+              <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                1
+              </button>
+              <button className="px-3 py-1 border border-gray-200 rounded hover:bg-gray-100">
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Add Tag Type Modal */}
+      {/* Add Tag Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Add Tag Type</h3>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
-                <AlertCircle size={24} />
+                <X size={24} />
               </button>
             </div>
 
@@ -234,8 +243,10 @@ const TaggingConfiguration: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Symbol</label>
                 <input
                   type="text"
-                  className="w-full border border-gray-200 rounded-lg p-2"
+                  value={newTag.symbol}
+                  onChange={(e) => setNewTag({ ...newTag, symbol: e.target.value })}
                   placeholder="Enter tag symbol (e.g., ⭐)"
+                  className="w-full p-2 border border-gray-200 rounded-lg"
                 />
               </div>
 
@@ -243,9 +254,11 @@ const TaggingConfiguration: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                 <input
                   type="text"
-                  className="w-full border border-gray-200 rounded-lg p-2"
+                  value={newTag.type}
+                  onChange={(e) => setNewTag({ ...newTag, type: e.target.value })}
                   placeholder="Enter tag type (e.g., S)"
                   maxLength={1}
+                  className="w-full p-2 border border-gray-200 rounded-lg"
                 />
               </div>
 
@@ -253,8 +266,10 @@ const TaggingConfiguration: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <input
                   type="text"
-                  className="w-full border border-gray-200 rounded-lg p-2"
+                  value={newTag.description}
+                  onChange={(e) => setNewTag({ ...newTag, description: e.target.value })}
                   placeholder="Enter tag description"
+                  className="w-full p-2 border border-gray-200 rounded-lg"
                 />
               </div>
 
@@ -262,10 +277,12 @@ const TaggingConfiguration: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Starting Number</label>
                 <input
                   type="number"
-                  className="w-full border border-gray-200 rounded-lg p-2"
+                  value={newTag.startingNumber}
+                  onChange={(e) => setNewTag({ ...newTag, startingNumber: e.target.value })}
                   placeholder="Enter starting number"
                   min={1}
                   max={20}
+                  className="w-full p-2 border border-gray-200 rounded-lg"
                 />
               </div>
 
@@ -276,7 +293,10 @@ const TaggingConfiguration: React.FC = () => {
                 >
                   Cancel
                 </button>
-                <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                <button
+                  onClick={handleAddTag}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
                   Add Tag Type
                 </button>
               </div>
