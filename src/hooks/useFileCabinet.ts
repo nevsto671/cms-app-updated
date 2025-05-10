@@ -82,9 +82,23 @@ export const useFileCabinet = () => {
     }
   };
 
-  const fetchDocumentTypes = async (folderId: string) => {
+  const fetchDocumentTypes = async (folderId?: string) => {
     try {
       setLoading(true);
+      setError(null);
+
+      // Validate folder ID
+      if (!folderId) {
+        setDocumentTypes([]);
+        return;
+      }
+
+      // UUID validation regex
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(folderId)) {
+        throw new Error('Invalid folder ID format');
+      }
+
       const { data, error } = await supabase
         .from('file_cabinet_document_types')
         .select('*')
@@ -93,10 +107,10 @@ export const useFileCabinet = () => {
 
       if (error) throw error;
       setDocumentTypes(data || []);
-      setError(null);
     } catch (err) {
       console.error('Error fetching document types:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch document types');
+      setDocumentTypes([]);
     } finally {
       setLoading(false);
     }

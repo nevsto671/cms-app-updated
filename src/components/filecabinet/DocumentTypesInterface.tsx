@@ -31,7 +31,10 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
   const [newTypeDescription, setNewTypeDescription] = useState('');
 
   useEffect(() => {
-    fetchDocumentTypes(folderId);
+    // Only fetch if we have a valid folder ID
+    if (folderId) {
+      fetchDocumentTypes(folderId);
+    }
   }, [folderId]);
 
   const handleSelectType = (id: string) => {
@@ -51,7 +54,7 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
   };
 
   const handleCreateType = async () => {
-    if (!newTypeName.trim()) return;
+    if (!newTypeName.trim() || !folderId) return;
 
     try {
       await createDocumentType(folderId, newTypeName.trim(), newTypeDescription.trim() || undefined);
@@ -76,6 +79,14 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
     type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     type.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (!folderId) {
+    return (
+      <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg">
+        No folder selected. Please select a folder to view document types.
+      </div>
+    );
+  }
 
   if (loading) {
     return (
