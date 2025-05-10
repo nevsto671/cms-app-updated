@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ContractCategoriesInterface from './ContractCategoriesInterface';
-import DocumentTypeFolders from './DocumentTypeFolders';
+import DocumentTypesInterface from './DocumentTypesInterface';
 
 interface FolderViewProps {
   branchId: string;
@@ -9,13 +9,13 @@ interface FolderViewProps {
 }
 
 const FolderView: React.FC<FolderViewProps> = ({ branchId, branchName, onBack }) => {
-  const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
+  const [selectedVendor, setSelectedVendor] = useState<{ id: string; name: string } | null>(null);
 
   if (selectedVendor) {
     return (
-      <DocumentTypeFolders
-        vendorId={selectedVendor}
+      <DocumentTypesInterface
         onBack={() => setSelectedVendor(null)}
+        vendorName={selectedVendor.name}
       />
     );
   }
@@ -23,7 +23,7 @@ const FolderView: React.FC<FolderViewProps> = ({ branchId, branchName, onBack })
   return (
     <ContractCategoriesInterface
       onBack={onBack}
-      onVendorSelect={(vendorId) => setSelectedVendor(vendorId)}
+      onVendorSelect={(vendorId, vendorName) => setSelectedVendor({ id: vendorId, name: vendorName })}
       branchName={branchName}
     />
   );

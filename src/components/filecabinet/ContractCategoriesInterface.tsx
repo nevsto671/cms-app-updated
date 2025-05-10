@@ -12,17 +12,17 @@ interface Vendor {
 
 interface ContractCategoriesInterfaceProps {
   onBack: () => void;
-  onVendorSelect: (vendorId: string) => void;
+  onVendorSelect: (vendorId: string, vendorName: string) => void;
   branchName: string;
 }
 
 const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = ({ onBack, onVendorSelect, branchName }) => {
   const [vendors, setVendors] = useState<Vendor[]>([
-    { id: '1', name: 'Vendor A', documents: 12, actions: 5, lastModified: '2025-04-15', status: 'active' },
-    { id: '2', name: 'Vendor B', documents: 8, actions: 3, lastModified: '2025-04-10', status: 'active' },
-    { id: '3', name: 'Vendor C', documents: 15, actions: 7, lastModified: '2025-04-22', status: 'pending' },
-    { id: '4', name: 'Vendor D', documents: 6, actions: 2, lastModified: '2025-04-05', status: 'expired' },
-    { id: '5', name: 'Vendor E', documents: 10, actions: 4, lastModified: '2025-04-18', status: 'active' }
+    { id: 'v1', name: 'Vendor A', documents: 12, actions: 5, lastModified: '2025-04-15', status: 'active' },
+    { id: 'v2', name: 'Vendor B', documents: 8, actions: 3, lastModified: '2025-04-10', status: 'active' },
+    { id: 'v3', name: 'Vendor C', documents: 15, actions: 7, lastModified: '2025-04-22', status: 'pending' },
+    { id: 'v4', name: 'Vendor D', documents: 6, actions: 2, lastModified: '2025-04-05', status: 'expired' },
+    { id: 'v5', name: 'Vendor E', documents: 10, actions: 4, lastModified: '2025-04-18', status: 'active' }
   ]);
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -34,9 +34,9 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
   const [renameFolderName, setRenameFolderName] = useState('');
   const [moveDestination, setMoveDestination] = useState('');
 
-  const handleSelectItem = (id: string, isDoubleClick: boolean = false) => {
+  const handleSelectItem = (id: string, name: string, isDoubleClick: boolean = false) => {
     if (isDoubleClick) {
-      onVendorSelect(id);
+      onVendorSelect(id, name);
       return;
     }
 
@@ -50,7 +50,7 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
   const handleNewFolder = () => {
     if (newFolderName.trim()) {
       const newVendor: Vendor = {
-        id: `${Date.now()}`,
+        id: `v${Date.now()}`,
         name: newFolderName.trim(),
         documents: 0,
         actions: 0,
@@ -103,7 +103,7 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm h-full flex flex-col">
+    <div className="h-full bg-white rounded-lg shadow-sm">
       <div className="bg-[#1c1f26] text-white px-4 py-3 flex items-center rounded-t-lg">
         <button
           onClick={onBack}
@@ -114,51 +114,43 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
         <h1 className="text-lg font-semibold">File Cabinet | {branchName}</h1>
       </div>
 
-      <div className="p-4 border-b border-gray-200 bg-gray-50">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowNewFolderModal(true)}
-            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 text-sm"
-          >
-            <Plus size={16} />
-            New Folder
-          </button>
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowNewFolderModal(true)}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+            >
+              <Plus size={16} />
+              New Folder
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={selectedItems.length === 0}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 size={16} />
+              Delete
+            </button>
+            <button
+              onClick={openRenameModal}
+              disabled={selectedItems.length !== 1}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Edit2 size={16} />
+              Rename
+            </button>
+            <button
+              onClick={() => setShowMoveModal(true)}
+              disabled={selectedItems.length === 0}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <MoveRight size={16} />
+              Move
+            </button>
+          </div>
 
-          <button
-            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 text-sm"
-          >
-            <Plus size={16} />
-            New Action
-          </button>
-
-          <button
-            onClick={handleDelete}
-            disabled={selectedItems.length === 0}
-            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Trash2 size={16} />
-            Delete
-          </button>
-
-          <button
-            onClick={openRenameModal}
-            disabled={selectedItems.length !== 1}
-            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Edit2 size={16} />
-            Rename
-          </button>
-
-          <button
-            onClick={() => setShowMoveModal(true)}
-            disabled={selectedItems.length === 0}
-            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <MoveRight size={16} />
-            Move
-          </button>
-
-          <div className="ml-auto relative">
+          <div className="relative">
             <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
             <input
               type="text"
@@ -171,11 +163,11 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="w-12 p-4">
+              <th className="w-8 p-4">
                 <input
                   type="checkbox"
                   checked={selectedItems.length === vendors.length && vendors.length > 0}
@@ -197,14 +189,14 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
                 className={`hover:bg-gray-50 cursor-pointer ${
                   selectedItems.includes(vendor.id) ? 'bg-blue-50' : ''
                 }`}
-                onClick={() => handleSelectItem(vendor.id)}
-                onDoubleClick={() => handleSelectItem(vendor.id, true)}
+                onClick={() => handleSelectItem(vendor.id, vendor.name)}
+                onDoubleClick={() => handleSelectItem(vendor.id, vendor.name, true)}
               >
                 <td className="p-4">
                   <input
                     type="checkbox"
                     checked={selectedItems.includes(vendor.id)}
-                    onChange={() => handleSelectItem(vendor.id)}
+                    onChange={() => handleSelectItem(vendor.id, vendor.name)}
                     onClick={(e) => e.stopPropagation()}
                     className="rounded border-gray-300"
                   />
@@ -237,25 +229,28 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
       {showNewFolderModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Create New Folder</h2>
-            <input
-              type="text"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder="Enter folder name"
-              className="w-full p-2 border border-gray-200 rounded-lg mb-4"
-              autoFocus
-            />
+            <h3 className="text-lg font-semibold mb-4">Create New Folder</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Folder Name</label>
+              <input
+                type="text"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter folder name"
+              />
+            </div>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowNewFolderModal(false)}
-                className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleNewFolder}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                disabled={!newFolderName.trim()}
               >
                 Create
               </button>
@@ -268,25 +263,28 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
       {showRenameModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Rename Folder</h2>
-            <input
-              type="text"
-              value={renameFolderName}
-              onChange={(e) => setRenameFolderName(e.target.value)}
-              placeholder="Enter new folder name"
-              className="w-full p-2 border border-gray-200 rounded-lg mb-4"
-              autoFocus
-            />
+            <h3 className="text-lg font-semibold mb-4">Rename Folder</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">New Name</label>
+              <input
+                type="text"
+                value={renameFolderName}
+                onChange={(e) => setRenameFolderName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter new name"
+              />
+            </div>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowRenameModal(false)}
-                className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRename}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                disabled={!renameFolderName.trim()}
               >
                 Rename
               </button>
@@ -299,28 +297,31 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
       {showMoveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Move Folder</h2>
-            <select
-              value={moveDestination}
-              onChange={(e) => setMoveDestination(e.target.value)}
-              className="w-full p-2 border border-gray-200 rounded-lg mb-4"
-            >
-              <option value="">Select destination...</option>
-              <option value="archive">Archive</option>
-              <option value="active">Active Contracts</option>
-              <option value="pending">Pending Review</option>
-            </select>
+            <h3 className="text-lg font-semibold mb-4">Move Folder</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+              <select
+                value={moveDestination}
+                onChange={(e) => setMoveDestination(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select destination...</option>
+                <option value="archive">Archive</option>
+                <option value="active">Active Folders</option>
+                <option value="pending">Pending Review</option>
+              </select>
+            </div>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowMoveModal(false)}
-                className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleMove}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                 disabled={!moveDestination}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Move
               </button>
