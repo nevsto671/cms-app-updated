@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, Plus, Copy, Trash2, MoveRight, Search, Filter } from 'lucide-react';
+import { ChevronLeft, Plus, Copy, Trash2, MoveRight, Search, Filter, ChevronRight } from 'lucide-react';
 
 interface Action {
   actionType: string;
@@ -100,7 +100,23 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({ onBack,
         >
           <ChevronLeft size={20} />
         </button>
-        <h1 className="text-lg font-semibold">File Cabinet | {vendorName} | Document Types</h1>
+        <div className="flex items-center text-lg font-semibold">
+          <button 
+            onClick={onBack} 
+            className="hover:text-blue-300 transition-colors"
+          >
+            File Cabinet
+          </button>
+          <ChevronRight size={16} className="mx-2" />
+          <button 
+            onClick={onBack}
+            className="hover:text-blue-300 transition-colors"
+          >
+            {vendorName}
+          </button>
+          <ChevronRight size={16} className="mx-2" />
+          <span>Document Types</span>
+        </div>
       </div>
 
       <div className="p-4 border-b border-gray-200">
