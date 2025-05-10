@@ -18,6 +18,7 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showOverview, setShowOverview] = useState(true);
+  const [showContractTitle, setShowContractTitle] = useState(true);
 
   // Mock data for demonstration
   const actionDetails = {
@@ -110,7 +111,17 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
 
       {/* Action Details */}
       <div className="px-4 py-2 grid grid-cols-8 gap-4 items-center text-sm border-b border-gray-200">
-        <div>{actionDetails.actionType}</div>
+        <div className="flex items-center gap-2">
+          {actionDetails.actionType}
+          <label className="inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showContractTitle}
+              onChange={(e) => setShowContractTitle(e.target.checked)}
+              className="h-3 w-3"
+            />
+          </label>
+        </div>
         <div className="text-blue-600">{actionDetails.actionId}</div>
         <div>{actionDetails.orderId}</div>
         <div>{actionDetails.modId}</div>
@@ -125,26 +136,28 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
       </div>
 
       {/* Title Section */}
-      <div className="px-4 py-3 border-b border-gray-200">
-        <div className="mb-2">
-          <label className="text-sm text-gray-600">Title:</label>
-          <span className="ml-2">{actionDetails.title}</span>
+      {showContractTitle && (
+        <div className="px-4 py-3 border-b border-gray-200">
+          <div className="mb-2">
+            <label className="text-sm text-gray-600">Title:</label>
+            <span className="ml-2">{actionDetails.title}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-8">
+            <div>
+              <label className="text-sm text-gray-600">Committed:</label>
+              <span className="ml-2 font-medium">{actionDetails.committed}</span>
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">Budgeted:</label>
+              <span className="ml-2 font-medium">{actionDetails.budgeted}</span>
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">Total Cost:</label>
+              <span className="ml-2 font-medium">{actionDetails.totalCost}</span>
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-3 gap-8">
-          <div>
-            <label className="text-sm text-gray-600">Committed:</label>
-            <span className="ml-2 font-medium">{actionDetails.committed}</span>
-          </div>
-          <div>
-            <label className="text-sm text-gray-600">Budgeted:</label>
-            <span className="ml-2 font-medium">{actionDetails.budgeted}</span>
-          </div>
-          <div>
-            <label className="text-sm text-gray-600">Total Cost:</label>
-            <span className="ml-2 font-medium">{actionDetails.totalCost}</span>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Navigation Tabs */}
       <div className="px-4 border-b border-gray-200">
