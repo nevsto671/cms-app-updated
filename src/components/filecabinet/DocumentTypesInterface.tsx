@@ -17,9 +17,7 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [isOverviewExpanded, setIsOverviewExpanded] = useState(true);
-  const [isFinancialExpanded, setIsFinancialExpanded] = useState(true);
-  const [isNotesExpanded, setIsNotesExpanded] = useState(true);
+  const [showOverview, setShowOverview] = useState(true);
 
   // Mock data for demonstration
   const actionDetails = {
@@ -153,14 +151,12 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
         <div className="flex space-x-1">
           <TabButton
             active={activeTab === 'overview'}
-            onClick={() => {
-              setActiveTab('overview');
-              setIsOverviewExpanded(!isOverviewExpanded);
-            }}
+            onClick={() => setActiveTab('overview')}
             icon={<FileText size={16} />}
             label="Overview"
             isOverviewTab={true}
-            isOverviewExpanded={isOverviewExpanded}
+            isChecked={showOverview}
+            onCheckboxChange={() => setShowOverview(!showOverview)}
           />
           <TabButton
             active={activeTab === 'dataValues'}
@@ -209,76 +205,64 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
 
       {/* Tab Content */}
       <div className="flex-1 overflow-auto">
-        {activeTab === 'overview' && (
+        {activeTab === 'overview' && showOverview && (
           <div className="space-y-6 p-6">
             {/* General Information Section */}
-            <div className={`bg-gray-50 rounded-lg ${isOverviewExpanded ? '' : 'p-4'}`}>
-              {isOverviewExpanded && (
-                <>
-                  <h3 className="text-lg font-semibold mb-4">General Information</h3>
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                    <div>
-                      <label className="block text-sm text-gray-600">Action Type</label>
-                      <div className="font-medium">{actionDetails.actionType}</div>
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-600">Order #</label>
-                      <div className="font-medium">{actionDetails.orderId}</div>
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-600">Action ID</label>
-                      <div className="font-medium text-blue-600">{actionDetails.actionId}</div>
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-600">Status</label>
-                      <div className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                        {actionDetails.status}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-600">Title</label>
-                      <div className="font-medium">{actionDetails.title}</div>
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-600">Receipt</label>
-                      <div className="font-medium">{actionDetails.receipt}</div>
-                    </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-semibold mb-4">General Information</h3>
+              <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                <div>
+                  <label className="block text-sm text-gray-600">Action Type</label>
+                  <div className="font-medium">{actionDetails.actionType}</div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Order #</label>
+                  <div className="font-medium">{actionDetails.orderId}</div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Action ID</label>
+                  <div className="font-medium text-blue-600">{actionDetails.actionId}</div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Status</label>
+                  <div className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                    {actionDetails.status}
                   </div>
-                </>
-              )}
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Title</label>
+                  <div className="font-medium">{actionDetails.title}</div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Receipt</label>
+                  <div className="font-medium">{actionDetails.receipt}</div>
+                </div>
+              </div>
             </div>
 
             {/* Financial Information Section */}
-            <div className={`bg-gray-50 rounded-lg ${isFinancialExpanded ? '' : 'p-4'}`}>
-              {isFinancialExpanded && (
-                <>
-                  <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
-                  <div className="grid grid-cols-3 gap-8">
-                    <div>
-                      <label className="block text-sm text-gray-600">Committed</label>
-                      <div className="font-medium">{actionDetails.committed}</div>
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-600">Budgeted</label>
-                      <div className="font-medium">{actionDetails.budgeted}</div>
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-600">Total Cost</label>
-                      <div className="font-medium">{actionDetails.totalCost}</div>
-                    </div>
-                  </div>
-                </>
-              )}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
+              <div className="grid grid-cols-3 gap-8">
+                <div>
+                  <label className="block text-sm text-gray-600">Committed</label>
+                  <div className="font-medium">{actionDetails.committed}</div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Budgeted</label>
+                  <div className="font-medium">{actionDetails.budgeted}</div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Total Cost</label>
+                  <div className="font-medium">{actionDetails.totalCost}</div>
+                </div>
+              </div>
             </div>
 
             {/* Notes Section */}
-            <div className={`bg-gray-50 rounded-lg ${isNotesExpanded ? '' : 'p-4'}`}>
-              {isNotesExpanded && (
-                <>
-                  <h3 className="text-lg font-semibold mb-4">Notes</h3>
-                  <p className="text-gray-600 italic">No notes have been added to this action.</p>
-                </>
-              )}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-semibold mb-4">Notes</h3>
+              <p className="text-gray-600 italic">No notes have been added to this action.</p>
             </div>
           </div>
         )}
@@ -331,7 +315,8 @@ interface TabButtonProps {
   icon: React.ReactNode;
   label: string;
   isOverviewTab?: boolean;
-  isOverviewExpanded?: boolean;
+  isChecked?: boolean;
+  onCheckboxChange?: () => void;
 }
 
 const TabButton: React.FC<TabButtonProps> = ({ 
@@ -340,7 +325,8 @@ const TabButton: React.FC<TabButtonProps> = ({
   icon, 
   label,
   isOverviewTab,
-  isOverviewExpanded 
+  isChecked,
+  onCheckboxChange
 }) => (
   <button
     onClick={onClick}
@@ -350,12 +336,15 @@ const TabButton: React.FC<TabButtonProps> = ({
         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
     }`}
   >
-    <input 
-      type="checkbox" 
-      checked={isOverviewTab ? isOverviewExpanded : active} 
-      readOnly 
-      className="h-3 w-3" 
-    />
+    {isOverviewTab && (
+      <input 
+        type="checkbox" 
+        checked={isChecked} 
+        onChange={onCheckboxChange}
+        onClick={(e) => e.stopPropagation()}
+        className="h-3 w-3 mr-1" 
+      />
+    )}
     {icon}
     <span>{label}</span>
   </button>
