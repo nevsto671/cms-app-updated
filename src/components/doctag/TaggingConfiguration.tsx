@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { Plus, Copy, Trash2, ArrowRight, Search, Filter } from 'lucide-react';
-import { Card } from '../ui/card';
 
-interface DocumentType {
+interface ActionType {
   id: string;
   type: string;
-  name: string;
-  prefix: string;
-  description: string;
-  status: 'active' | 'inactive';
-  lastModified: string;
+  actionId: string;
+  orderId: string;
+  modId: string;
+  state: string;
+  status: string;
+  receipt: boolean;
+  goals: string;
 }
 
 const TaggingConfiguration: React.FC = () => {
@@ -17,33 +18,61 @@ const TaggingConfiguration: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  const documentTypes: DocumentType[] = [
+  const actions: ActionType[] = [
     {
-      id: 'S',
-      type: 'Solicitation',
-      name: 'Solicitation Documents',
-      prefix: 'S-',
-      description: 'For solicitation and procurement request documents',
-      status: 'active',
-      lastModified: '2025-05-10'
+      id: '1',
+      type: 'Purchase',
+      actionId: 'ACT-001',
+      orderId: 'ORD-5892',
+      modId: 'MOD-21',
+      state: 'CA',
+      status: 'Completed',
+      receipt: true,
+      goals: 'Cost reduction'
     },
     {
-      id: 'P',
-      type: 'Procurement',
-      name: 'Procurement Documents',
-      prefix: 'P-',
-      description: 'For procurement and purchasing documents',
-      status: 'active',
-      lastModified: '2025-05-09'
+      id: '2',
+      type: 'Service',
+      actionId: 'ACT-002',
+      orderId: 'ORD-5893',
+      modId: 'MOD-33',
+      state: 'NY',
+      status: 'In Progress',
+      receipt: false,
+      goals: 'Maintenance'
     },
     {
-      id: 'C',
-      type: 'Contract',
-      name: 'Contract Documents',
-      prefix: 'C-',
-      description: 'For contract and agreement documents',
-      status: 'active',
-      lastModified: '2025-05-08'
+      id: '3',
+      type: 'Replace',
+      actionId: 'ACT-003',
+      orderId: 'ORD-5894',
+      modId: 'MOD-12',
+      state: 'TX',
+      status: 'Pending',
+      receipt: true,
+      goals: 'Upgrade'
+    },
+    {
+      id: '4',
+      type: 'Installation',
+      actionId: 'ACT-004',
+      orderId: 'ORD-5895',
+      modId: 'MOD-47',
+      state: 'WA',
+      status: 'Scheduled',
+      receipt: false,
+      goals: 'Expansion'
+    },
+    {
+      id: '5',
+      type: 'Consultation',
+      actionId: 'ACT-005',
+      orderId: 'ORD-5896',
+      modId: 'MOD-08',
+      state: 'FL',
+      status: 'Completed',
+      receipt: true,
+      goals: 'Optimization'
     }
   ];
 
@@ -55,7 +84,7 @@ const TaggingConfiguration: React.FC = () => {
 
   const handleSelectAll = () => {
     setSelectedItems(
-      selectedItems.length === documentTypes.length ? [] : documentTypes.map(type => type.id)
+      selectedItems.length === actions.length ? [] : actions.map(action => action.id)
     );
   };
 
@@ -66,14 +95,14 @@ const TaggingConfiguration: React.FC = () => {
         <div className="flex gap-2">
           <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2">
             <Plus size={16} />
-            New Type
+            New
           </button>
           <button
             disabled={selectedItems.length === 0}
             className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
           >
             <Copy size={16} />
-            Duplicate
+            Replicate
           </button>
           <button
             disabled={selectedItems.length === 0}
@@ -95,7 +124,7 @@ const TaggingConfiguration: React.FC = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search document types..."
+              placeholder="Search actions..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -113,39 +142,7 @@ const TaggingConfiguration: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      {showFilters && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select className="w-full border border-gray-200 rounded-lg p-2">
-              <option>All Statuses</option>
-              <option>Active</option>
-              <option>Inactive</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <select className="w-full border border-gray-200 rounded-lg p-2">
-              <option>All Categories</option>
-              <option>Solicitation</option>
-              <option>Procurement</option>
-              <option>Contract</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Modified</label>
-            <select className="w-full border border-gray-200 rounded-lg p-2">
-              <option>Any time</option>
-              <option>Last 7 days</option>
-              <option>Last 30 days</option>
-              <option>Last 90 days</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      {/* Document Types Table */}
+      {/* Actions Table */}
       <div className="bg-white rounded-lg shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -154,51 +151,62 @@ const TaggingConfiguration: React.FC = () => {
                 <th className="w-8 p-4">
                   <input
                     type="checkbox"
-                    checked={selectedItems.length === documentTypes.length}
+                    checked={selectedItems.length === actions.length}
                     onChange={handleSelectAll}
                     className="rounded border-gray-300"
                   />
                 </th>
-                <th className="text-left text-sm font-medium text-gray-600 p-4">Type</th>
-                <th className="text-left text-sm font-medium text-gray-600 p-4">Name</th>
-                <th className="text-left text-sm font-medium text-gray-600 p-4">Prefix</th>
-                <th className="text-left text-sm font-medium text-gray-600 p-4">Description</th>
+                <th className="text-left text-sm font-medium text-gray-600 p-4">Action Type</th>
+                <th className="text-left text-sm font-medium text-gray-600 p-4">Action ID</th>
+                <th className="text-left text-sm font-medium text-gray-600 p-4">Order #</th>
+                <th className="text-left text-sm font-medium text-gray-600 p-4">Mod #</th>
+                <th className="text-left text-sm font-medium text-gray-600 p-4">State</th>
                 <th className="text-left text-sm font-medium text-gray-600 p-4">Status</th>
-                <th className="text-left text-sm font-medium text-gray-600 p-4">Last Modified</th>
+                <th className="text-left text-sm font-medium text-gray-600 p-4">Receipt</th>
+                <th className="text-left text-sm font-medium text-gray-600 p-4">Goals</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {documentTypes.map((type) => (
+              {actions.map((action) => (
                 <tr
-                  key={type.id}
+                  key={action.id}
                   className={`hover:bg-gray-50 cursor-pointer ${
-                    selectedItems.includes(type.id) ? 'bg-blue-50' : ''
+                    selectedItems.includes(action.id) ? 'bg-blue-50' : ''
                   }`}
-                  onClick={() => handleSelectItem(type.id)}
+                  onClick={() => handleSelectItem(action.id)}
                 >
                   <td className="p-4">
                     <input
                       type="checkbox"
-                      checked={selectedItems.includes(type.id)}
-                      onChange={() => handleSelectItem(type.id)}
+                      checked={selectedItems.includes(action.id)}
+                      onChange={() => handleSelectItem(action.id)}
                       onClick={(e) => e.stopPropagation()}
                       className="rounded border-gray-300"
                     />
                   </td>
-                  <td className="p-4">{type.type}</td>
-                  <td className="p-4">{type.name}</td>
-                  <td className="p-4 font-mono">{type.prefix}</td>
-                  <td className="p-4">{type.description}</td>
+                  <td className="p-4">{action.type}</td>
+                  <td className="p-4 font-mono">{action.actionId}</td>
+                  <td className="p-4 font-mono">{action.orderId}</td>
+                  <td className="p-4 font-mono">{action.modId}</td>
+                  <td className="p-4">{action.state}</td>
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      type.status === 'active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
+                      action.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                      action.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                      action.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
                     }`}>
-                      {type.status}
+                      {action.status}
                     </span>
                   </td>
-                  <td className="p-4 text-sm text-gray-600">{type.lastModified}</td>
+                  <td className="p-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      action.receipt ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {action.receipt ? 'Yes' : 'No'}
+                    </span>
+                  </td>
+                  <td className="p-4">{action.goals}</td>
                 </tr>
               ))}
             </tbody>
