@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Copy, Trash2, ArrowRight, Search, Filter } from 'lucide-react';
+import { ChevronLeft, Plus, Copy, Trash2, MoveRight, Search, Filter } from 'lucide-react';
 
-interface ActionType {
-  id: string;
-  type: string;
+interface Action {
+  actionType: string;
   actionId: string;
   orderId: string;
   modId: string;
@@ -13,15 +12,19 @@ interface ActionType {
   goals: string;
 }
 
-const DocumentTypesInterface: React.FC<{ onBack: () => void; vendorName: string }> = ({ onBack, vendorName }) => {
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+interface DocumentTypesInterfaceProps {
+  onBack: () => void;
+  vendorName: string;
+}
+
+const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({ onBack, vendorName }) => {
+  const [selectedActions, setSelectedActions] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  const actions: ActionType[] = [
+  const actions: Action[] = [
     {
-      id: '1',
-      type: 'Purchase',
+      actionType: 'Purchase',
       actionId: 'ACT-001',
       orderId: 'ORD-5892',
       modId: 'MOD-21',
@@ -31,8 +34,7 @@ const DocumentTypesInterface: React.FC<{ onBack: () => void; vendorName: string 
       goals: 'Cost reduction'
     },
     {
-      id: '2',
-      type: 'Service',
+      actionType: 'Service',
       actionId: 'ACT-002',
       orderId: 'ORD-5893',
       modId: 'MOD-33',
@@ -42,8 +44,7 @@ const DocumentTypesInterface: React.FC<{ onBack: () => void; vendorName: string 
       goals: 'Maintenance'
     },
     {
-      id: '3',
-      type: 'Replace',
+      actionType: 'Replace',
       actionId: 'ACT-003',
       orderId: 'ORD-5894',
       modId: 'MOD-12',
@@ -53,8 +54,7 @@ const DocumentTypesInterface: React.FC<{ onBack: () => void; vendorName: string 
       goals: 'Upgrade'
     },
     {
-      id: '4',
-      type: 'Installation',
+      actionType: 'Installation',
       actionId: 'ACT-004',
       orderId: 'ORD-5895',
       modId: 'MOD-47',
@@ -64,8 +64,7 @@ const DocumentTypesInterface: React.FC<{ onBack: () => void; vendorName: string 
       goals: 'Expansion'
     },
     {
-      id: '5',
-      type: 'Consultation',
+      actionType: 'Consultation',
       actionId: 'ACT-005',
       orderId: 'ORD-5896',
       modId: 'MOD-08',
@@ -76,25 +75,34 @@ const DocumentTypesInterface: React.FC<{ onBack: () => void; vendorName: string 
     }
   ];
 
-  const handleSelectItem = (id: string) => {
-    setSelectedItems(prev =>
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+  const handleSelectAction = (actionId: string) => {
+    setSelectedActions(prev =>
+      prev.includes(actionId)
+        ? prev.filter(id => id !== actionId)
+        : [...prev, actionId]
     );
   };
 
   const handleSelectAll = () => {
-    setSelectedItems(
-      selectedItems.length === actions.length ? [] : actions.map(action => action.id)
+    setSelectedActions(
+      selectedActions.length === actions.length
+        ? []
+        : actions.map(action => action.actionId)
     );
   };
 
   return (
     <div className="h-full bg-white rounded-lg shadow-sm">
       <div className="bg-[#1c1f26] text-white px-4 py-3 flex items-center rounded-t-lg">
+        <button
+          onClick={onBack}
+          className="mr-3 hover:bg-[#2a2f3a] p-1 rounded transition-colors"
+        >
+          <ChevronLeft size={20} />
+        </button>
         <h1 className="text-lg font-semibold">File Cabinet | {vendorName} | Document Types</h1>
       </div>
 
-      {/* Actions Bar */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <div className="flex gap-2">
@@ -106,12 +114,18 @@ const DocumentTypesInterface: React.FC<{ onBack: () => void; vendorName: string 
               <Copy size={16} />
               Replicate
             </button>
-            <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+            <button 
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+              disabled={selectedActions.length === 0}
+            >
               <Trash2 size={16} />
               Delete
             </button>
-            <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-              <ArrowRight size={16} />
+            <button 
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+              disabled={selectedActions.length === 0}
+            >
+              <MoveRight size={16} />
               Move
             </button>
           </div>
@@ -139,7 +153,6 @@ const DocumentTypesInterface: React.FC<{ onBack: () => void; vendorName: string 
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50">
@@ -147,7 +160,7 @@ const DocumentTypesInterface: React.FC<{ onBack: () => void; vendorName: string 
               <th className="w-8 p-4">
                 <input
                   type="checkbox"
-                  checked={selectedItems.length === actions.length}
+                  checked={selectedActions.length === actions.length}
                   onChange={handleSelectAll}
                   className="rounded border-gray-300"
                 />
@@ -165,22 +178,22 @@ const DocumentTypesInterface: React.FC<{ onBack: () => void; vendorName: string 
           <tbody className="divide-y divide-gray-200">
             {actions.map((action) => (
               <tr
-                key={action.id}
+                key={action.actionId}
                 className={`hover:bg-gray-50 cursor-pointer ${
-                  selectedItems.includes(action.id) ? 'bg-blue-50' : ''
+                  selectedActions.includes(action.actionId) ? 'bg-blue-50' : ''
                 }`}
-                onClick={() => handleSelectItem(action.id)}
+                onClick={() => handleSelectAction(action.actionId)}
               >
                 <td className="p-4">
                   <input
                     type="checkbox"
-                    checked={selectedItems.includes(action.id)}
-                    onChange={() => handleSelectItem(action.id)}
+                    checked={selectedActions.includes(action.actionId)}
+                    onChange={() => handleSelectAction(action.actionId)}
                     onClick={(e) => e.stopPropagation()}
                     className="rounded border-gray-300"
                   />
                 </td>
-                <td className="p-4">{action.type}</td>
+                <td className="p-4">{action.actionType}</td>
                 <td className="p-4 font-mono">{action.actionId}</td>
                 <td className="p-4 font-mono">{action.orderId}</td>
                 <td className="p-4 font-mono">{action.modId}</td>
