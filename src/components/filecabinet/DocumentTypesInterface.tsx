@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, FileText, File, Link, DollarSign, Briefcase, CheckSquare, ChevronDown } from 'lucide-react';
+import { ChevronLeft, FileText, File, Link, DollarSign, Briefcase, CheckSquare, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface DocumentTypesInterfaceProps {
   onBack: () => void;
@@ -12,6 +12,7 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
   vendorName,
   folderId 
 }) => {
+  const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState('overview');
   const [isExpanded, setIsExpanded] = useState(false);
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(true);
@@ -33,6 +34,10 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
     budgeted: '$0.00',
     totalCost: '$0.00'
   };
+
+  // Mock data for pagination
+  const totalPages = 4;
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
     <div className="h-full bg-white rounded-lg shadow-sm flex flex-col">
@@ -220,6 +225,44 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Pagination */}
+      <div className="border-t border-gray-200 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center">
+          <span className="text-sm text-gray-700">
+            Page {currentPage} of {totalPages}
+          </span>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          {pages.map(page => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 border rounded-md text-sm font-medium ${
+                currentPage === page
+                  ? 'bg-blue-50 border-blue-500 text-blue-600'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
