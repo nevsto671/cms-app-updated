@@ -270,7 +270,7 @@ const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ onClose }) => {
             type="text"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
             placeholder="Type confirmation text..."
           />
           {error && (
