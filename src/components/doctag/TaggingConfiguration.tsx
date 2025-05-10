@@ -12,6 +12,18 @@ interface Tag {
   updated_at: string;
 }
 
+interface TagType {
+  code: string;
+  name: string;
+  description: string;
+}
+
+const defaultTagTypes: TagType[] = [
+  { code: 'S', name: 'Solicitation', description: 'Documents related to requesting bids/proposals' },
+  { code: 'P', name: 'Procurement', description: 'Documents related to purchasing and acquisition' },
+  { code: 'C', name: 'Contract', description: 'Documents related to formal agreements' }
+];
+
 const TaggingConfiguration: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -26,10 +38,22 @@ const TaggingConfiguration: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [showAddTagTypeModal, setShowAddTagTypeModal] = useState(false);
+  const [newTagType, setNewTagType] = useState<Partial<TagType>>({});
+  const [tagTypes, setTagTypes] = useState<TagType[]>(defaultTagTypes);
+  const [selectedTagType, setSelectedTagType] = useState('');
+  const [newDocumentTitle, setNewDocumentTitle] = useState('');
+  const [nextTagNumber, setNextTagNumber] = useState<number | null>(null);
 
   useEffect(() => {
     fetchTags();
   }, []);
+
+  useEffect(() => {
+    if (selectedTagType) {
+      getNextTagNumber(selectedTagType);
+    }
+  }, [selectedTagType]);
 
   const fetchTags = async () => {
     try {
@@ -48,6 +72,61 @@ const TaggingConfiguration: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getNextTagNumber = async (tagType: string) => {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_next_tag_number', { p_tag_type: tagType });
+
+      if (error) throw error;
+      setNextTagNumber(data);
+    } catch (err) {
+      console.error('Error getting next tag number:', err);
+      setError('Failed to get next tag number');
+    }
+  };
+
+  const handleCreateTag = async () => {
+    if (!selectedTagType || !newDocumentTitle.trim()) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('doctag_documents')
+        .insert({
+          tag_type: selectedTagType,
+          document_title: newDocumentTitle.trim(),
+          created_by: user.id
+        });
+
+      if (error) throw error;
+
+      await fetchTags();
+      setShowAddModal(false);
+      setSelectedTagType('');
+      setNewDocumentTitle('');
+      setNextTagNumber(null);
+    } catch (err) {
+      console.error('Error creating tag:', err);
+      setError('Failed to create tag');
+    }
+  };
+
+  const handleCreateTagType = async () => {
+    if (!newTagType.code || !newTagType.name) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    setTagTypes([...tagTypes, newTagType as TagType]);
+    setShowAddTagTypeModal(false);
+    setNewTagType({});
   };
 
   const handleEdit = (tag: Tag) => {
@@ -131,6 +210,145 @@ const TaggingConfiguration: React.FC = () => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toISOString().split('T')[0];
   };
+
+  const renderAddTagModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 className="text-lg font-semibold mb-4">Create New Tag</h2>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tag Type
+            </label>
+            <select
+              value={selectedTagType}
+              onChange={(e) => setSelectedTagType(e.target.value)}
+              className="w-full p-2 border border-gray-200 rounded-lg"
+            >
+              <option value="">Select Tag Type</option>
+              {tagTypes.map(type => (
+                <option key={type.code} value={type.code}>
+                  {type.code} - {type.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedTagType && nextTagNumber && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tag Number (Auto-generated)
+              </label>
+              <input
+                type="text"
+                value={`${selectedTagType}${nextTagNumber}`}
+                disabled
+                className="w-full p-2 bg-gray-100 border border-gray-200 rounded-lg"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Document Title
+            </label>
+            <input
+              type="text"
+              value={newDocumentTitle}
+              onChange={(e) => setNewDocumentTitle(e.target.value)}
+              className="w-full p-2 border border-gray-200 rounded-lg"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-between mt-6">
+          <button
+            onClick={() => setShowAddTagTypeModal(true)}
+            className="px-4 py-2 text-blue-600 hover:text-blue-800"
+          >
+            + Add Custom Tag Type
+          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowAddModal(false)}
+              className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreateTag}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            >
+              Create Tag
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAddTagTypeModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 className="text-lg font-semibold mb-4">Add Custom Tag Type</h2>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Type Code (Single Character)
+            </label>
+            <input
+              type="text"
+              maxLength={1}
+              value={newTagType.code || ''}
+              onChange={(e) => setNewTagType({ ...newTagType, code: e.target.value.toUpperCase() })}
+              className="w-full p-2 border border-gray-200 rounded-lg"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Type Name
+            </label>
+            <input
+              type="text"
+              value={newTagType.name || ''}
+              onChange={(e) => setNewTagType({ ...newTagType, name: e.target.value })}
+              className="w-full p-2 border border-gray-200 rounded-lg"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description
+            </label>
+            <textarea
+              value={newTagType.description || ''}
+              onChange={(e) => setNewTagType({ ...newTagType, description: e.target.value })}
+              className="w-full p-2 border border-gray-200 rounded-lg"
+              rows={3}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-6">
+          <button
+            onClick={() => setShowAddTagTypeModal(false)}
+            className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreateTagType}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            Add Tag Type
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -338,6 +556,12 @@ const TaggingConfiguration: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Add Tag Modal */}
+      {showAddModal && renderAddTagModal()}
+      
+      {/* Add Tag Type Modal */}
+      {showAddTagTypeModal && renderAddTagTypeModal()}
     </div>
   );
 };
