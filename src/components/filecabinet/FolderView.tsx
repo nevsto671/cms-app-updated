@@ -16,6 +16,7 @@ const FolderView: React.FC<FolderViewProps> = ({ branchId, branchName, onBack })
       <DocumentTypesInterface
         onBack={() => setSelectedVendor(null)}
         vendorName={selectedVendor.name}
+        folderId={selectedVendor.id}
       />
     );
   }
