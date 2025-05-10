@@ -25,11 +25,22 @@ export interface Action {
   goals: string | null;
 }
 
+export interface DocumentType {
+  id: string;
+  folder_id: string;
+  name: string;
+  description: string | null;
+  status: 'active' | 'inactive' | 'archived';
+  created_at: string;
+  updated_at: string;
+}
+
 export const useFileCabinet = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [actions, setActions] = useState<Action[]>([]);
+  const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
 
   const fetchFolders = async (parentId: string | null = null) => {
     try {
@@ -66,6 +77,26 @@ export const useFileCabinet = () => {
     } catch (err) {
       console.error('Error fetching actions:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch actions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDocumentTypes = async (folderId: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('file_cabinet_document_types')
+        .select('*')
+        .eq('folder_id', folderId)
+        .order('name');
+
+      if (error) throw error;
+      setDocumentTypes(data || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching document types:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch document types');
     } finally {
       setLoading(false);
     }
@@ -123,15 +154,72 @@ export const useFileCabinet = () => {
     }
   };
 
+  const createDocumentType = async (folderId: string, name: string, description?: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('file_cabinet_document_types')
+        .insert([
+          { folder_id: folderId, name, description }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      setDocumentTypes([...documentTypes, data]);
+      return data;
+    } catch (err) {
+      console.error('Error creating document type:', err);
+      throw err;
+    }
+  };
+
+  const updateDocumentType = async (id: string, updates: Partial<DocumentType>) => {
+    try {
+      const { data, error } = await supabase
+        .from('file_cabinet_document_types')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setDocumentTypes(documentTypes.map(dt => dt.id === id ? data : dt));
+      return data;
+    } catch (err) {
+      console.error('Error updating document type:', err);
+      throw err;
+    }
+  };
+
+  const deleteDocumentType = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('file_cabinet_document_types')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setDocumentTypes(documentTypes.filter(dt => dt.id !== id));
+    } catch (err) {
+      console.error('Error deleting document type:', err);
+      throw err;
+    }
+  };
+
   return {
     folders,
     actions,
+    documentTypes,
     loading,
     error,
     fetchFolders,
     fetchActions,
+    fetchDocumentTypes,
     createFolder,
     updateFolder,
-    deleteFolder
+    deleteFolder,
+    createDocumentType,
+    updateDocumentType,
+    deleteDocumentType
   };
 };

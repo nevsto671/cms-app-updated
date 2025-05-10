@@ -1,95 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Plus, Copy, Trash2, MoveRight, Search, Filter, ChevronRight } from 'lucide-react';
-
-interface Action {
-  actionType: string;
-  actionId: string;
-  orderId: string;
-  modId: string;
-  state: string;
-  status: string;
-  receipt: boolean;
-  goals: string;
-}
+import { useFileCabinet, DocumentType } from '../../hooks/useFileCabinet';
 
 interface DocumentTypesInterfaceProps {
   onBack: () => void;
   vendorName: string;
+  folderId: string;
 }
 
-const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({ onBack, vendorName }) => {
-  const [selectedActions, setSelectedActions] = useState<string[]>([]);
+const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({ 
+  onBack, 
+  vendorName,
+  folderId 
+}) => {
+  const { 
+    documentTypes,
+    loading,
+    error,
+    fetchDocumentTypes,
+    createDocumentType,
+    updateDocumentType,
+    deleteDocumentType
+  } = useFileCabinet();
+
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showNewModal, setShowNewModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [newTypeName, setNewTypeName] = useState('');
+  const [newTypeDescription, setNewTypeDescription] = useState('');
 
-  const actions: Action[] = [
-    {
-      actionType: 'Purchase',
-      actionId: 'ACT-001',
-      orderId: 'ORD-5892',
-      modId: 'MOD-21',
-      state: 'CA',
-      status: 'Completed',
-      receipt: true,
-      goals: 'Cost reduction'
-    },
-    {
-      actionType: 'Service',
-      actionId: 'ACT-002',
-      orderId: 'ORD-5893',
-      modId: 'MOD-33',
-      state: 'NY',
-      status: 'In Progress',
-      receipt: false,
-      goals: 'Maintenance'
-    },
-    {
-      actionType: 'Replace',
-      actionId: 'ACT-003',
-      orderId: 'ORD-5894',
-      modId: 'MOD-12',
-      state: 'TX',
-      status: 'Pending',
-      receipt: true,
-      goals: 'Upgrade'
-    },
-    {
-      actionType: 'Installation',
-      actionId: 'ACT-004',
-      orderId: 'ORD-5895',
-      modId: 'MOD-47',
-      state: 'WA',
-      status: 'Scheduled',
-      receipt: false,
-      goals: 'Expansion'
-    },
-    {
-      actionType: 'Consultation',
-      actionId: 'ACT-005',
-      orderId: 'ORD-5896',
-      modId: 'MOD-08',
-      state: 'FL',
-      status: 'Completed',
-      receipt: true,
-      goals: 'Optimization'
-    }
-  ];
+  useEffect(() => {
+    fetchDocumentTypes(folderId);
+  }, [folderId]);
 
-  const handleSelectAction = (actionId: string) => {
-    setSelectedActions(prev =>
-      prev.includes(actionId)
-        ? prev.filter(id => id !== actionId)
-        : [...prev, actionId]
+  const handleSelectType = (id: string) => {
+    setSelectedTypes(prev =>
+      prev.includes(id)
+        ? prev.filter(typeId => typeId !== id)
+        : [...prev, id]
     );
   };
 
   const handleSelectAll = () => {
-    setSelectedActions(
-      selectedActions.length === actions.length
+    setSelectedTypes(
+      selectedTypes.length === documentTypes.length
         ? []
-        : actions.map(action => action.actionId)
+        : documentTypes.map(type => type.id)
     );
   };
+
+  const handleCreateType = async () => {
+    if (!newTypeName.trim()) return;
+
+    try {
+      await createDocumentType(folderId, newTypeName.trim(), newTypeDescription.trim() || undefined);
+      setNewTypeName('');
+      setNewTypeDescription('');
+      setShowNewModal(false);
+    } catch (err) {
+      console.error('Failed to create document type:', err);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    try {
+      await Promise.all(selectedTypes.map(id => deleteDocumentType(id)));
+      setSelectedTypes([]);
+    } catch (err) {
+      console.error('Failed to delete document types:', err);
+    }
+  };
+
+  const filteredTypes = documentTypes.filter(type =>
+    type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    type.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+        Error: {error}
+      </div>
+    );
+  }
 
   return (
     <div className="h-full bg-white rounded-lg shadow-sm">
@@ -122,27 +124,20 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({ onBack,
       <div className="p-4 border-b border-gray-200">
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <div className="flex gap-2">
-            <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+            <button 
+              onClick={() => setShowNewModal(true)}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+            >
               <Plus size={16} />
-              New
-            </button>
-            <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-              <Copy size={16} />
-              Replicate
+              New Type
             </button>
             <button 
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-              disabled={selectedActions.length === 0}
+              onClick={handleDeleteSelected}
+              disabled={selectedTypes.length === 0}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Trash2 size={16} />
               Delete
-            </button>
-            <button 
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-              disabled={selectedActions.length === 0}
-            >
-              <MoveRight size={16} />
-              Move
             </button>
           </div>
 
@@ -150,7 +145,7 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({ onBack,
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search actions..."
+                placeholder="Search document types..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -176,67 +171,104 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({ onBack,
               <th className="w-8 p-4">
                 <input
                   type="checkbox"
-                  checked={selectedActions.length === actions.length}
+                  checked={selectedTypes.length === documentTypes.length}
                   onChange={handleSelectAll}
                   className="rounded border-gray-300"
                 />
               </th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Action Type</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Action ID</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Order #</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Mod #</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">State</th>
+              <th className="text-left text-sm font-medium text-gray-600 p-4">Name</th>
+              <th className="text-left text-sm font-medium text-gray-600 p-4">Description</th>
               <th className="text-left text-sm font-medium text-gray-600 p-4">Status</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Receipt</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Goals</th>
+              <th className="text-left text-sm font-medium text-gray-600 p-4">Created</th>
+              <th className="text-left text-sm font-medium text-gray-600 p-4">Updated</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {actions.map((action) => (
+            {filteredTypes.map((type) => (
               <tr
-                key={action.actionId}
+                key={type.id}
                 className={`hover:bg-gray-50 cursor-pointer ${
-                  selectedActions.includes(action.actionId) ? 'bg-blue-50' : ''
+                  selectedTypes.includes(type.id) ? 'bg-blue-50' : ''
                 }`}
-                onClick={() => handleSelectAction(action.actionId)}
+                onClick={() => handleSelectType(type.id)}
               >
                 <td className="p-4">
                   <input
                     type="checkbox"
-                    checked={selectedActions.includes(action.actionId)}
-                    onChange={() => handleSelectAction(action.actionId)}
+                    checked={selectedTypes.includes(type.id)}
+                    onChange={() => handleSelectType(type.id)}
                     onClick={(e) => e.stopPropagation()}
                     className="rounded border-gray-300"
                   />
                 </td>
-                <td className="p-4">{action.actionType}</td>
-                <td className="p-4 font-mono">{action.actionId}</td>
-                <td className="p-4 font-mono">{action.orderId}</td>
-                <td className="p-4 font-mono">{action.modId}</td>
-                <td className="p-4">{action.state}</td>
+                <td className="p-4">{type.name}</td>
+                <td className="p-4">{type.description || '-'}</td>
                 <td className="p-4">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    action.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                    action.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                    action.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
+                    type.status === 'active' ? 'bg-green-100 text-green-800' :
+                    type.status === 'inactive' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
                   }`}>
-                    {action.status}
+                    {type.status}
                   </span>
                 </td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    action.receipt ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {action.receipt ? 'Yes' : 'No'}
-                  </span>
+                <td className="p-4 text-sm text-gray-600">
+                  {new Date(type.created_at).toLocaleDateString()}
                 </td>
-                <td className="p-4">{action.goals}</td>
+                <td className="p-4 text-sm text-gray-600">
+                  {new Date(type.updated_at).toLocaleDateString()}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* New Document Type Modal */}
+      {showNewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Create New Document Type</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={newTypeName}
+                  onChange={(e) => setNewTypeName(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter type name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={newTypeDescription}
+                  onChange={(e) => setNewTypeDescription(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter description"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setShowNewModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateType}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                disabled={!newTypeName.trim()}
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
