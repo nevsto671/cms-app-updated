@@ -12,19 +12,13 @@ interface ImportStatus {
 
 // CSV template headers and example row
 const CSV_HEADERS = [
-  'code',
-  'document_type',
-  'description',
-  'tag_id',
-  'document_title'
+  'tag_no',
+  'description'
 ];
 
 const CSV_EXAMPLE = [
-  'S',
-  'Solicitation',
-  'Documents related to requesting bids/proposals',
-  'S-1',
-  'Request for Proposal: IT Services'
+  'S1',
+  'Solicitation Documents'
 ];
 
 const TagImport: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
@@ -87,7 +81,7 @@ const TagImport: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   };
 
   const validateRow = (row: any): boolean => {
-    const requiredFields = ['code', 'document_type', 'description'];
+    const requiredFields = ['tag_no', 'description'];
     return requiredFields.every(field => {
       if (!(field in row)) {
         throw new Error(`Missing required field: ${field}`);
@@ -111,11 +105,19 @@ const TagImport: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
           throw new Error('Invalid row structure');
         }
 
+        // Parse tag number into type and number
+        const tagMatch = row.tag_no.match(/^([A-Za-z])(\d+)$/);
+        if (!tagMatch) {
+          throw new Error(`Invalid tag number format: ${row.tag_no}`);
+        }
+
+        const [, tagType, tagNumber] = tagMatch;
+
         const { error } = await supabase
           .from('tag_types')
           .insert({
-            code: row.code,
-            document_type: row.document_type,
+            code: tagType.toUpperCase(),
+            document_type: tagType.toUpperCase(),
             description: row.description
           });
 
