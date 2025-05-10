@@ -1,35 +1,75 @@
-import React, { useState } from 'react';
-import { Upload, X, AlertCircle, Download } from 'lucide-react';
-import Papa from 'papaparse';
+import React, { useState, useRef } from 'react';
+import { Upload, X, FileText, AlertCircle, CheckCircle, Download } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import Papa from 'papaparse';
 
-interface TagImportProps {
-  onComplete: () => void;
+interface ImportStatus {
+  total: number;
+  processed: number;
+  successful: number;
+  failed: number;
 }
 
-const TagImport: React.FC<TagImportProps> = ({ onComplete }) => {
+// CSV template headers and example row
+const CSV_HEADERS = [
+  'code',
+  'document_type',
+  'description',
+  'tag_id',
+  'document_title'
+];
+
+const CSV_EXAMPLE = [
+  'S',
+  'Solicitation',
+  'Documents related to requesting bids/proposals',
+  'S-1',
+  'Request for Proposal: IT Services'
+];
+
+const TagImport: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+  const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<ImportStatus | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // CSV template structure
-  const CSV_HEADERS = [
-    'code',
-    'document_type',
-    'description',
-    'tag_id',
-    'document_title'
-  ];
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
 
-  const CSV_EXAMPLE = [
-    'S',
-    'Solicitation',
-    'Documents related to requesting bids/proposals',
-    'S-1',
-    'Request for Proposal: IT Services'
-  ];
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile && droppedFile.type === 'text/csv') {
+      setFile(droppedFile);
+      setError(null);
+    } else {
+      setError('Please upload a CSV file');
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile && selectedFile.type === 'text/csv') {
+      setFile(selectedFile);
+      setError(null);
+    } else {
+      setError('Please upload a CSV file');
+    }
+  };
 
   const downloadTemplate = () => {
+    // Create CSV content with headers and example row
     const csvContent = [
       CSV_HEADERS.join(','),
       CSV_EXAMPLE.map(field => `"${field}"`).join(',')
@@ -46,11 +86,60 @@ const TagImport: React.FC<TagImportProps> = ({ onComplete }) => {
     URL.revokeObjectURL(url);
   };
 
+  const validateRow = (row: any): boolean => {
+    const requiredFields = ['code', 'document_type', 'description'];
+    return requiredFields.every(field => {
+      if (!(field in row)) {
+        throw new Error(`Missing required field: ${field}`);
+      }
+      return true;
+    });
+  };
+
+  const processImport = async (rows: any[]) => {
+    const status: ImportStatus = {
+      total: rows.length,
+      processed: 0,
+      successful: 0,
+      failed: 0
+    };
+
+    for (const row of rows) {
+      try {
+        // Validate row structure
+        if (!validateRow(row)) {
+          throw new Error('Invalid row structure');
+        }
+
+        const { error } = await supabase
+          .from('tag_types')
+          .insert({
+            code: row.code,
+            document_type: row.document_type,
+            description: row.description
+          });
+
+        if (error) throw error;
+
+        status.successful++;
+      } catch (err) {
+        status.failed++;
+        console.error('Import error:', err);
+      }
+      
+      status.processed++;
+      setStatus({ ...status });
+    }
+
+    return status;
+  };
+
   const handleImport = async () => {
     if (!file) return;
 
     setImporting(true);
     setError(null);
+    setStatus(null);
 
     try {
       Papa.parse(file, {
@@ -63,23 +152,12 @@ const TagImport: React.FC<TagImportProps> = ({ onComplete }) => {
             return;
           }
 
-          try {
-            // Process each row and insert into database
-            for (const row of results.data) {
-              const { data, error } = await supabase
-                .from('tag_types')
-                .insert({
-                  code: row.code,
-                  document_type: row.document_type,
-                  description: row.description
-                });
-
-              if (error) throw error;
-            }
-
-            onComplete();
-          } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to import data');
+          const finalStatus = await processImport(results.data);
+          
+          if (finalStatus.successful > 0) {
+            setTimeout(() => {
+              onComplete();
+            }, 2000);
           }
         },
         error: (error) => {
@@ -94,10 +172,10 @@ const TagImport: React.FC<TagImportProps> = ({ onComplete }) => {
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-sm">
+    <div className="p-6 bg-white">
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Import Tag Data</h2>
-        <p className="text-sm text-gray-600">Upload a CSV file containing tag definitions</p>
+        <p className="text-sm text-gray-600">Upload a CSV file containing tag data</p>
       </div>
 
       <div className="mb-6 p-4 bg-blue-50 rounded-lg">
@@ -118,26 +196,26 @@ const TagImport: React.FC<TagImportProps> = ({ onComplete }) => {
         </div>
       </div>
 
-      <div className="border-2 border-dashed rounded-lg p-8 text-center">
+      <div
+        className={`border-2 border-dashed rounded-lg p-8 text-center ${
+          isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <input
           type="file"
+          ref={fileInputRef}
+          onChange={handleFileSelect}
           accept=".csv"
           className="hidden"
-          onChange={(e) => {
-            const selectedFile = e.target.files?.[0];
-            if (selectedFile && selectedFile.type === 'text/csv') {
-              setFile(selectedFile);
-              setError(null);
-            } else {
-              setError('Please upload a CSV file');
-            }
-          }}
-          id="file-upload"
         />
-        
+
         {file ? (
           <div className="space-y-4">
             <div className="flex items-center justify-center gap-2 text-gray-700">
+              <FileText size={24} />
               <span>{file.name}</span>
               <button
                 onClick={() => setFile(null)}
@@ -164,12 +242,12 @@ const TagImport: React.FC<TagImportProps> = ({ onComplete }) => {
             <Upload size={32} className="mx-auto text-gray-400 mb-4" />
             <p className="text-gray-600 mb-2">
               Drag and drop your CSV file here, or{' '}
-              <label
-                htmlFor="file-upload"
-                className="text-blue-500 hover:text-blue-600 cursor-pointer"
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="text-blue-500 hover:text-blue-600"
               >
                 browse
-              </label>
+              </button>
             </p>
             <p className="text-sm text-gray-500">
               Supported format: CSV
@@ -182,6 +260,41 @@ const TagImport: React.FC<TagImportProps> = ({ onComplete }) => {
         <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg flex items-center gap-2">
           <AlertCircle size={16} />
           {error}
+        </div>
+      )}
+
+      {status && (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-medium text-gray-800">Import Progress</h3>
+            <span className="text-sm text-gray-600">
+              {status.processed} of {status.total} items
+            </span>
+          </div>
+          
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-500 transition-all duration-300"
+              style={{ width: `${(status.processed / status.total) * 100}%` }}
+            />
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-2 text-green-600">
+              <CheckCircle size={16} />
+              <span className="text-sm">
+                {status.successful} items imported successfully
+              </span>
+            </div>
+            {status.failed > 0 && (
+              <div className="flex items-center gap-2 text-red-600">
+                <AlertCircle size={16} />
+                <span className="text-sm">
+                  {status.failed} items failed to import
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
