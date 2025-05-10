@@ -1,18 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Plus, Copy, Trash2, MoveRight, Search, Filter, ChevronRight } from 'lucide-react';
-import { useFileCabinet } from '../../hooks/useFileCabinet';
-
-interface ActionType {
-  id: string;
-  type: string;
-  actionId: string;
-  orderId: string;
-  modId: string;
-  state: string;
-  status: string;
-  receipt: boolean;
-  goals: string;
-}
+import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, FileText, File, Link, DollarSign, Briefcase, CheckSquare } from 'lucide-react';
 
 interface DocumentTypesInterfaceProps {
   onBack: () => void;
@@ -25,187 +12,226 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
   vendorName,
   folderId 
 }) => {
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
-  const actions: ActionType[] = [
-    {
-      id: '1',
-      type: 'Purchase',
-      actionId: 'ACT-001',
-      orderId: 'ORD-5892',
-      modId: 'MOD-21',
-      state: 'CA',
-      status: 'Completed',
-      receipt: true,
-      goals: 'Cost reduction'
-    }
-  ];
-
-  const handleSelectItem = (id: string) => {
-    setSelectedItems(prev =>
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
+  // Mock data for demonstration
+  const actionDetails = {
+    actionType: 'Purchase',
+    actionId: 'ACT-001',
+    orderId: 'ORD-5892',
+    modId: 'MOD-21',
+    state: 'CA',
+    status: 'Completed',
+    receipt: 'Yes',
+    goals: 'Cost reduction',
+    title: 'Contract Title',
+    committed: '$0.00',
+    budgeted: '$0.00',
+    totalCost: '$0.00'
   };
 
-  const handleSelectAll = () => {
-    setSelectedItems(
-      selectedItems.length === actions.length ? [] : actions.map(action => action.id)
-    );
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return (
+          <div className="space-y-6 p-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-semibold mb-4">General Information</h3>
+              <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                <div>
+                  <label className="block text-sm text-gray-600">Action Type</label>
+                  <div className="font-medium">{actionDetails.actionType}</div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Order #</label>
+                  <div className="font-medium">{actionDetails.orderId}</div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Action ID</label>
+                  <div className="font-medium text-blue-600">{actionDetails.actionId}</div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Status</label>
+                  <div className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                    {actionDetails.status}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Title</label>
+                  <div className="font-medium">{actionDetails.title}</div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Receipt</label>
+                  <div className="font-medium">{actionDetails.receipt}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
+              <div className="grid grid-cols-3 gap-8">
+                <div>
+                  <label className="block text-sm text-gray-600">Committed</label>
+                  <div className="font-medium">{actionDetails.committed}</div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Budgeted</label>
+                  <div className="font-medium">{actionDetails.budgeted}</div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600">Total Cost</label>
+                  <div className="font-medium">{actionDetails.totalCost}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-semibold mb-4">Notes</h3>
+              <p className="text-gray-600 italic">No notes have been added to this action.</p>
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="p-6">
+            <p className="text-gray-600">Content for {activeTab} tab</p>
+          </div>
+        );
+    }
   };
 
   return (
-    <div className="h-full bg-white rounded-lg shadow-sm">
-      <div className="bg-[#1c1f26] text-white px-4 py-3 flex items-center rounded-t-lg">
-        <button
-          onClick={onBack}
-          className="mr-3 hover:bg-[#2a2f3a] p-1 rounded transition-colors"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <div className="flex items-center text-lg font-semibold">
-          <button 
-            onClick={onBack} 
-            className="hover:text-blue-300 transition-colors"
-          >
-            File Cabinet
-          </button>
-          <ChevronRight size={16} className="mx-2" />
-          <button 
-            onClick={onBack}
-            className="hover:text-blue-300 transition-colors"
-          >
-            {vendorName}
-          </button>
-          <ChevronRight size={16} className="mx-2" />
-          <span>Document Types</span>
-        </div>
+    <div className="h-full bg-white rounded-lg shadow-sm flex flex-col">
+      {/* Header Bar */}
+      <div className="bg-[#EBF5FF] px-4 py-3 grid grid-cols-7 gap-4 items-center text-sm">
+        <div>Action Type</div>
+        <div>Action ID</div>
+        <div>Order #</div>
+        <div>Mod #</div>
+        <div>State</div>
+        <div>Status</div>
+        <div>Receipt</div>
       </div>
 
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex gap-2">
-            <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-              <Plus size={16} />
-              New
-            </button>
-            <button
-              disabled={selectedItems.length === 0}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
-            >
-              <Copy size={16} />
-              Replicate
-            </button>
-            <button
-              disabled={selectedItems.length === 0}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
-            >
-              <Trash2 size={16} />
-              Delete
-            </button>
-            <button
-              disabled={selectedItems.length === 0}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
-            >
-              <MoveRight size={16} />
-              Move
-            </button>
-          </div>
+      {/* Header Values */}
+      <div className="px-4 py-2 grid grid-cols-7 gap-4 items-center text-sm border-b border-gray-200">
+        <div>{actionDetails.actionType}</div>
+        <div className="text-blue-600">{actionDetails.actionId}</div>
+        <div>{actionDetails.orderId}</div>
+        <div>{actionDetails.modId}</div>
+        <div>{actionDetails.state}</div>
+        <div>
+          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+            {actionDetails.status}
+          </span>
+        </div>
+        <div>{actionDetails.receipt}</div>
+      </div>
 
-          <div className="flex gap-2">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search actions..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
-            </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`p-2 border border-gray-200 rounded-lg hover:bg-gray-50 ${
-                showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : ''
-              }`}
-            >
-              <Filter size={20} />
-            </button>
+      {/* Title Section */}
+      <div className="px-4 py-3 border-b border-gray-200">
+        <div className="mb-2">
+          <label className="text-sm text-gray-600">Title:</label>
+          <span className="ml-2">{actionDetails.title}</span>
+        </div>
+        <div className="grid grid-cols-3 gap-8">
+          <div>
+            <label className="text-sm text-gray-600">Committed:</label>
+            <span className="ml-2 font-medium">{actionDetails.committed}</span>
+          </div>
+          <div>
+            <label className="text-sm text-gray-600">Budgeted:</label>
+            <span className="ml-2 font-medium">{actionDetails.budgeted}</span>
+          </div>
+          <div>
+            <label className="text-sm text-gray-600">Total Cost:</label>
+            <span className="ml-2 font-medium">{actionDetails.totalCost}</span>
           </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="w-8 p-4">
-                <input
-                  type="checkbox"
-                  checked={selectedItems.length === actions.length}
-                  onChange={handleSelectAll}
-                  className="rounded border-gray-300"
-                />
-              </th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Action Type</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Action ID</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Order #</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Mod #</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">State</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Status</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Receipt</th>
-              <th className="text-left text-sm font-medium text-gray-600 p-4">Goals</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {actions.map((action) => (
-              <tr
-                key={action.id}
-                className={`hover:bg-gray-50 cursor-pointer ${
-                  selectedItems.includes(action.id) ? 'bg-blue-50' : ''
-                }`}
-                onClick={() => handleSelectItem(action.id)}
-              >
-                <td className="p-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.includes(action.id)}
-                    onChange={() => handleSelectItem(action.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="rounded border-gray-300"
-                  />
-                </td>
-                <td className="p-4">{action.type}</td>
-                <td className="p-4 font-mono">{action.actionId}</td>
-                <td className="p-4 font-mono">{action.orderId}</td>
-                <td className="p-4 font-mono">{action.modId}</td>
-                <td className="p-4">{action.state}</td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    action.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                    action.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                    action.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {action.status}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    action.receipt ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {action.receipt ? 'Yes' : 'No'}
-                  </span>
-                </td>
-                <td className="p-4">{action.goals}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Navigation Tabs */}
+      <div className="px-4 border-b border-gray-200">
+        <div className="flex space-x-1">
+          <TabButton
+            active={activeTab === 'overview'}
+            onClick={() => setActiveTab('overview')}
+            icon={<FileText size={16} />}
+            label="Overview"
+          />
+          <TabButton
+            active={activeTab === 'dataValues'}
+            onClick={() => setActiveTab('dataValues')}
+            icon={<File size={16} />}
+            label="Data Values"
+          />
+          <TabButton
+            active={activeTab === 'connectedActions'}
+            onClick={() => setActiveTab('connectedActions')}
+            icon={<Link size={16} />}
+            label="Connected Actions (0)"
+          />
+          <TabButton
+            active={activeTab === 'funding'}
+            onClick={() => setActiveTab('funding')}
+            icon={<DollarSign size={16} />}
+            label="Funding (0)"
+          />
+          <TabButton
+            active={activeTab === 'items'}
+            onClick={() => setActiveTab('items')}
+            icon={<File size={16} />}
+            label="Items (0)"
+          />
+          <TabButton
+            active={activeTab === 'briefcase'}
+            onClick={() => setActiveTab('briefcase')}
+            icon={<Briefcase size={16} />}
+            label="Briefcase (0)"
+          />
+          <TabButton
+            active={activeTab === 'documents'}
+            onClick={() => setActiveTab('documents')}
+            icon={<File size={16} />}
+            label="Documents (0)"
+          />
+          <TabButton
+            active={activeTab === 'milestones'}
+            onClick={() => setActiveTab('milestones')}
+            icon={<CheckSquare size={16} />}
+            label="Milestones"
+          />
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="flex-1 overflow-auto">
+        {renderTabContent()}
       </div>
     </div>
   );
 };
+
+interface TabButtonProps {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}
+
+const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-1 px-3 py-2 text-sm font-medium border-b-2 ${
+      active
+        ? 'border-blue-500 text-blue-600'
+        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+    }`}
+  >
+    <input type="checkbox" checked={active} readOnly className="h-3 w-3" />
+    {icon}
+    <span>{label}</span>
+  </button>
+);
 
 export default DocumentTypesInterface;
