@@ -14,6 +14,7 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isOverviewExpanded, setIsOverviewExpanded] = useState(true);
 
   // Mock data for demonstration
   const actionDetails = {
@@ -36,38 +37,44 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
       case 'overview':
         return (
           <div className="space-y-6 p-6">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-4">General Information</h3>
-              <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                <div>
-                  <label className="block text-sm text-gray-600">Action Type</label>
-                  <div className="font-medium">{actionDetails.actionType}</div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Order #</label>
-                  <div className="font-medium">{actionDetails.orderId}</div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Action ID</label>
-                  <div className="font-medium text-blue-600">{actionDetails.actionId}</div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Status</label>
-                  <div className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                    {actionDetails.status}
+            {/* General Information Section */}
+            <div className={`bg-gray-50 rounded-lg ${isOverviewExpanded ? '' : 'p-4'}`}>
+              {isOverviewExpanded ? (
+                <>
+                  <h3 className="text-lg font-semibold mb-4">General Information</h3>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                    <div>
+                      <label className="block text-sm text-gray-600">Action Type</label>
+                      <div className="font-medium">{actionDetails.actionType}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Order #</label>
+                      <div className="font-medium">{actionDetails.orderId}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Action ID</label>
+                      <div className="font-medium text-blue-600">{actionDetails.actionId}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Status</label>
+                      <div className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                        {actionDetails.status}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Title</label>
+                      <div className="font-medium">{actionDetails.title}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Receipt</label>
+                      <div className="font-medium">{actionDetails.receipt}</div>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Title</label>
-                  <div className="font-medium">{actionDetails.title}</div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Receipt</label>
-                  <div className="font-medium">{actionDetails.receipt}</div>
-                </div>
-              </div>
+                </>
+              ) : null}
             </div>
 
+            {/* Financial Information Section */}
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
               <div className="grid grid-cols-3 gap-8">
@@ -86,6 +93,7 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
               </div>
             </div>
 
+            {/* Notes Section */}
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="text-lg font-semibold mb-4">Notes</h3>
               <p className="text-gray-600 italic">No notes have been added to this action.</p>
@@ -162,9 +170,14 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
             <div className="flex space-x-1">
               <TabButton
                 active={activeTab === 'overview'}
-                onClick={() => setActiveTab('overview')}
+                onClick={() => {
+                  setActiveTab('overview');
+                  setIsOverviewExpanded(!isOverviewExpanded);
+                }}
                 icon={<FileText size={16} />}
                 label="Overview"
+                isOverviewTab={true}
+                isOverviewExpanded={isOverviewExpanded}
               />
               <TabButton
                 active={activeTab === 'dataValues'}
@@ -226,9 +239,18 @@ interface TabButtonProps {
   onClick: () => void;
   icon: React.ReactNode;
   label: string;
+  isOverviewTab?: boolean;
+  isOverviewExpanded?: boolean;
 }
 
-const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) => (
+const TabButton: React.FC<TabButtonProps> = ({ 
+  active, 
+  onClick, 
+  icon, 
+  label,
+  isOverviewTab,
+  isOverviewExpanded 
+}) => (
   <button
     onClick={onClick}
     className={`flex items-center gap-1 px-3 py-2 text-sm font-medium border-b-2 ${
@@ -237,7 +259,12 @@ const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) =
         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
     }`}
   >
-    <input type="checkbox" checked={active} readOnly className="h-3 w-3" />
+    <input 
+      type="checkbox" 
+      checked={isOverviewTab ? isOverviewExpanded : active} 
+      readOnly 
+      className="h-3 w-3" 
+    />
     {icon}
     <span>{label}</span>
   </button>
