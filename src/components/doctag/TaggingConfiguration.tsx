@@ -3,7 +3,6 @@ import { Search, Filter, Plus, Edit2, Trash2, Upload, X, Settings } from 'lucide
 
 interface TagType {
   id: string;
-  symbol: string;
   type: string;
   description: string;
   nextNumber: number;
@@ -18,7 +17,6 @@ const TaggingConfiguration: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [newTag, setNewTag] = useState({
-    symbol: '',
     type: '',
     description: '',
     startingNumber: ''
@@ -27,7 +25,6 @@ const TaggingConfiguration: React.FC = () => {
   const mockTags: TagType[] = [
     {
       id: '1',
-      symbol: '⭐',
       type: 'S',
       description: 'Solicitation Documents',
       nextNumber: 15,
@@ -36,7 +33,6 @@ const TaggingConfiguration: React.FC = () => {
     },
     {
       id: '2',
-      symbol: '📦',
       type: 'P',
       description: 'Procurement Documents',
       nextNumber: 8,
@@ -45,7 +41,6 @@ const TaggingConfiguration: React.FC = () => {
     },
     {
       id: '3',
-      symbol: '📝',
       type: 'C',
       description: 'Contract Documents',
       nextNumber: 12,
@@ -56,10 +51,10 @@ const TaggingConfiguration: React.FC = () => {
 
   const handleAddTag = () => {
     // Validate and add new tag
-    if (newTag.symbol && newTag.type && newTag.description) {
+    if (newTag.type && newTag.description) {
       // Add tag logic here
       setShowAddModal(false);
-      setNewTag({ symbol: '', type: '', description: '', startingNumber: '' });
+      setNewTag({ type: '', description: '', startingNumber: '' });
     }
   };
 
@@ -95,7 +90,7 @@ const TaggingConfiguration: React.FC = () => {
           <div className="flex-1 relative">
             <input
               type="text"
-              placeholder="Search by symbol, type, or description..."
+              placeholder="Search by type or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -122,9 +117,9 @@ const TaggingConfiguration: React.FC = () => {
                 className="w-full border border-gray-200 rounded-lg p-2"
               >
                 <option value="all">All Types</option>
-                <option value="S">Solicitation (⭐)</option>
-                <option value="P">Procurement (📦)</option>
-                <option value="C">Contract (📝)</option>
+                <option value="S">Solicitation</option>
+                <option value="P">Procurement</option>
+                <option value="C">Contract</option>
               </select>
             </div>
           </div>
@@ -149,7 +144,6 @@ const TaggingConfiguration: React.FC = () => {
                     className="rounded border-gray-300"
                   />
                 </th>
-                <th className="text-left text-sm font-medium text-gray-600 p-4">Symbol</th>
                 <th className="text-left text-sm font-medium text-gray-600 p-4">Type</th>
                 <th className="text-left text-sm font-medium text-gray-600 p-4">Description</th>
                 <th className="text-left text-sm font-medium text-gray-600 p-4">Next Number</th>
@@ -175,7 +169,6 @@ const TaggingConfiguration: React.FC = () => {
                       className="rounded border-gray-300"
                     />
                   </td>
-                  <td className="p-4 text-2xl">{tag.symbol}</td>
                   <td className="p-4">
                     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                       Type {tag.type}
@@ -239,17 +232,6 @@ const TaggingConfiguration: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Symbol</label>
-                <input
-                  type="text"
-                  value={newTag.symbol}
-                  onChange={(e) => setNewTag({ ...newTag, symbol: e.target.value })}
-                  placeholder="Enter tag symbol (e.g., ⭐)"
-                  className="w-full p-2 border border-gray-200 rounded-lg"
-                />
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                 <input
