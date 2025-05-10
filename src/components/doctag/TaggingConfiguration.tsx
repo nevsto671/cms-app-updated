@@ -15,8 +15,11 @@ const TaggingConfiguration: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filterType, setFilterType] = useState('all');
+  const [selectedTag, setSelectedTag] = useState<TagType | null>(null);
   const [newTag, setNewTag] = useState({
     type: '',
     description: '',
@@ -54,12 +57,32 @@ const TaggingConfiguration: React.FC = () => {
   ];
 
   const handleAddTag = () => {
-    // Validate and add new tag
     if (newTag.type && newTag.description) {
-      // Add tag logic here
       setShowAddModal(false);
       setNewTag({ type: '', description: '', startingNumber: '' });
     }
+  };
+
+  const handleEditTag = (tag: TagType) => {
+    setSelectedTag(tag);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteTag = (tag: TagType) => {
+    setSelectedTag(tag);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmEdit = () => {
+    // Implement edit logic here
+    setShowEditModal(false);
+    setSelectedTag(null);
+  };
+
+  const handleConfirmDelete = () => {
+    // Implement delete logic here
+    setShowDeleteModal(false);
+    setSelectedTag(null);
   };
 
   const formatTagNumber = (tag: TagType) => `${tag.type}${tag.number}`;
@@ -186,14 +209,25 @@ const TaggingConfiguration: React.FC = () => {
                   <td className="p-4">{tag.lastUsed}</td>
                   <td className="p-4">
                     <div className="flex gap-2">
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <Edit2 size={16} className="text-gray-600" />
+                      <button 
+                        onClick={() => handleEditTag(tag)}
+                        className="p-1 hover:bg-gray-100 rounded text-blue-600 hover:text-blue-800"
+                        title="Edit Tag"
+                      >
+                        <Edit2 size={16} />
                       </button>
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <Settings size={16} className="text-gray-600" />
+                      <button 
+                        className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-800"
+                        title="Configure Settings"
+                      >
+                        <Settings size={16} />
                       </button>
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <Trash2 size={16} className="text-gray-600" />
+                      <button 
+                        onClick={() => handleDeleteTag(tag)}
+                        className="p-1 hover:bg-gray-100 rounded text-red-600 hover:text-red-800"
+                        title="Delete Tag"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -288,6 +322,85 @@ const TaggingConfiguration: React.FC = () => {
                   Add Tag Type
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && selectedTag && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Edit Tag Type</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <input
+                  type="text"
+                  defaultValue={selectedTag.description}
+                  className="w-full p-2 border border-gray-200 rounded-lg"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmEdit}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedTag && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Delete Tag Type</h3>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete the tag type "{formatTagNumber(selectedTag)}"? This action cannot be undone.
+            </p>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
