@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Proposal, Office } from '../../types/workflow';
 
@@ -9,23 +9,29 @@ interface WorkflowChartsProps {
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#6366F1'];
 
-const WorkflowCharts: React.FC<WorkflowChartsProps> = ({ proposals, offices }) => {
-  // Prepare data for office allocation chart
-  const officeAllocationData = offices.map(office => ({
-    name: office.name.split(' ').slice(1).join(' '), // Remove "Office of" prefix
-    count: proposals.filter(p => p.assignedOffice === office.id).length
-  })).filter(d => d.count > 0);
+const WorkflowCharts: React.FC<WorkflowChartsProps> = React.memo(({ proposals, offices }) => {
+  const officeAllocationData = useMemo(() => {
+    return offices.map(office => ({
+      name: office.name.split(' ').slice(1).join(' '),
+      count: proposals.filter(p => p.assignedOffice === office.id).length
+    })).filter(d => d.count > 0);
+  }, [offices, proposals]);
 
-  // Prepare data for priority distribution
-  const priorityData = [
-    { name: 'High', value: proposals.filter(p => p.priority === 'high').length },
-    { name: 'Medium', value: proposals.filter(p => p.priority === 'medium').length },
-    { name: 'Low', value: proposals.filter(p => p.priority === 'low').length }
-  ];
+  const priorityData = useMemo(() => {
+    const counts = proposals.reduce((acc, p) => {
+      acc[p.priority] = (acc[p.priority] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return [
+      { name: 'High', value: counts.high || 0 },
+      { name: 'Medium', value: counts.medium || 0 },
+      { name: 'Low', value: counts.low || 0 }
+    ];
+  }, [proposals]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Office Allocation Chart */}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold mb-4">Proposal Distribution by Office</h3>
         <div className="h-[300px]">
@@ -41,7 +47,6 @@ const WorkflowCharts: React.FC<WorkflowChartsProps> = ({ proposals, offices }) =
         </div>
       </div>
 
-      {/* Priority Distribution Chart */}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold mb-4">Proposal Distribution by Priority</h3>
         <div className="h-[300px]">
@@ -69,6 +74,8 @@ const WorkflowCharts: React.FC<WorkflowChartsProps> = ({ proposals, offices }) =
       </div>
     </div>
   );
-};
+});
+
+WorkflowCharts.displayName = 'WorkflowCharts';
 
 export default WorkflowCharts;
