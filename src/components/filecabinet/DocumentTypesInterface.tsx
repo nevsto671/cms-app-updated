@@ -15,6 +15,8 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
   const [activeTab, setActiveTab] = useState('overview');
   const [isExpanded, setIsExpanded] = useState(false);
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(true);
+  const [isFinancialExpanded, setIsFinancialExpanded] = useState(true);
+  const [isNotesExpanded, setIsNotesExpanded] = useState(true);
 
   // Mock data for demonstration
   const actionDetails = {
@@ -75,28 +77,36 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
             </div>
 
             {/* Financial Information Section */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
-              <div className="grid grid-cols-3 gap-8">
-                <div>
-                  <label className="block text-sm text-gray-600">Committed</label>
-                  <div className="font-medium">{actionDetails.committed}</div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Budgeted</label>
-                  <div className="font-medium">{actionDetails.budgeted}</div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Total Cost</label>
-                  <div className="font-medium">{actionDetails.totalCost}</div>
-                </div>
-              </div>
+            <div className={`bg-gray-50 rounded-lg ${isFinancialExpanded ? '' : 'p-4'}`}>
+              {isFinancialExpanded ? (
+                <>
+                  <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
+                  <div className="grid grid-cols-3 gap-8">
+                    <div>
+                      <label className="block text-sm text-gray-600">Committed</label>
+                      <div className="font-medium">{actionDetails.committed}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Budgeted</label>
+                      <div className="font-medium">{actionDetails.budgeted}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Total Cost</label>
+                      <div className="font-medium">{actionDetails.totalCost}</div>
+                    </div>
+                  </div>
+                </>
+              ) : null}
             </div>
 
             {/* Notes Section */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-4">Notes</h3>
-              <p className="text-gray-600 italic">No notes have been added to this action.</p>
+            <div className={`bg-gray-50 rounded-lg ${isNotesExpanded ? '' : 'p-4'}`}>
+              {isNotesExpanded ? (
+                <>
+                  <h3 className="text-lg font-semibold mb-4">Notes</h3>
+                  <p className="text-gray-600 italic">No notes have been added to this action.</p>
+                </>
+              ) : null}
             </div>
           </div>
         );
