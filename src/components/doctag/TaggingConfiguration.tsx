@@ -17,11 +17,15 @@ const TaggingConfiguration: React.FC = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
+  const [editTitle, setEditTitle] = useState('');
 
   useEffect(() => {
     fetchTags();
@@ -43,6 +47,58 @@ const TaggingConfiguration: React.FC = () => {
       setError('Failed to load tags');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEdit = (tag: Tag) => {
+    setSelectedTag(tag);
+    setEditTitle(tag.document_title);
+    setShowEditModal(true);
+  };
+
+  const handleDelete = (tag: Tag) => {
+    setSelectedTag(tag);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmEdit = async () => {
+    if (!selectedTag || !editTitle.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('doctag_documents')
+        .update({ document_title: editTitle.trim() })
+        .eq('id', selectedTag.id);
+
+      if (error) throw error;
+
+      await fetchTags();
+      setShowEditModal(false);
+      setSelectedTag(null);
+      setEditTitle('');
+    } catch (err) {
+      console.error('Error updating tag:', err);
+      setError('Failed to update tag');
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedTag) return;
+
+    try {
+      const { error } = await supabase
+        .from('doctag_documents')
+        .delete()
+        .eq('id', selectedTag.id);
+
+      if (error) throw error;
+
+      await fetchTags();
+      setShowDeleteConfirm(false);
+      setSelectedTag(null);
+    } catch (err) {
+      console.error('Error deleting tag:', err);
+      setError('Failed to delete tag');
     }
   };
 
@@ -171,12 +227,14 @@ const TaggingConfiguration: React.FC = () => {
                     <td className="p-4">
                       <div className="flex gap-2">
                         <button 
+                          onClick={() => handleEdit(tag)}
                           className="p-1 hover:bg-gray-100 rounded text-blue-600 hover:text-blue-800"
                           title="Edit Tag"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button 
+                          onClick={() => handleDelete(tag)}
                           className="p-1 hover:bg-gray-100 rounded text-red-600 hover:text-red-800"
                           title="Delete Tag"
                         >
@@ -206,6 +264,77 @@ const TaggingConfiguration: React.FC = () => {
               </button>
             </div>
             <TagImport onComplete={handleImportComplete} />
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold mb-4">Edit Tag</h2>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tag ID
+              </label>
+              <input
+                type="text"
+                value={selectedTag?.tag_id}
+                disabled
+                className="w-full p-2 bg-gray-100 border border-gray-200 rounded-lg"
+              />
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Document Title
+              </label>
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmEdit}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold mb-4">Delete Tag</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete tag {selectedTag?.tag_id}? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
