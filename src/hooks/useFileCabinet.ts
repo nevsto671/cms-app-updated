@@ -48,7 +48,7 @@ export const useFileCabinet = () => {
       const { data, error } = await supabase
         .from('file_cabinet_folders')
         .select('*')
-        .eq('parent_id', parentId)
+        .is('parent_id', parentId)
         .order('name');
 
       if (error) throw error;
