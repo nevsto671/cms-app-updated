@@ -24,6 +24,7 @@ export const useCatalog = () => {
 
       if (error) throw error;
       setItems(data || []);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch catalog items');
     } finally {
@@ -52,7 +53,7 @@ export const useCatalog = () => {
         item.contract_no,
         item.uom,
         item.sin
-      ];
+      ].filter(Boolean); // Remove null/undefined values
 
       // Search through catalog codes
       const codes = item.catalog_codes?.map(code => `${code.code_type} ${code.code}`) || [];
@@ -63,13 +64,12 @@ export const useCatalog = () => {
       searchableFields.push(...tags);
 
       // Convert numeric fields to string for searching
-      if (item.govt_price) {
+      if (item.govt_price !== null && item.govt_price !== undefined) {
         searchableFields.push(item.govt_price.toString());
       }
 
       // Join all fields and search
       return searchableFields
-        .filter(Boolean)
         .join(' ')
         .toLowerCase()
         .includes(term);
