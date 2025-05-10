@@ -74,7 +74,7 @@ const TagImport: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'tag-template.csv';
+    a.download = 'tag_name_list.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
