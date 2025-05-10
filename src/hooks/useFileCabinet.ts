@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface Folder {
@@ -42,9 +42,11 @@ export const useFileCabinet = () => {
   const [actions, setActions] = useState<Action[]>([]);
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
 
-  const fetchFolders = async (parentId: string | null = null) => {
+  const fetchFolders = useCallback(async (parentId: string | null = null) => {
     try {
       setLoading(true);
+      setError(null);
+      
       const { data, error } = await supabase
         .from('file_cabinet_folders')
         .select('*')
@@ -53,14 +55,14 @@ export const useFileCabinet = () => {
 
       if (error) throw error;
       setFolders(data || []);
-      setError(null);
     } catch (err) {
       console.error('Error fetching folders:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch folders');
+      setFolders([]); // Reset folders on error
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const fetchActions = async (folderId: string) => {
     try {
@@ -169,6 +171,9 @@ export const useFileCabinet = () => {
         .eq('id', id);
 
       if (error) throw error;
+      
+      // Update local state to remove the deleted folder
+      setFolders(prevFolders => prevFolders.filter(folder => folder.id !== id));
     } catch (err) {
       console.error('Error deleting folder:', err);
       throw err;

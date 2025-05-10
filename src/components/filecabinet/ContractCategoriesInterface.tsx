@@ -31,6 +31,7 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
   const [newFolderName, setNewFolderName] = useState('');
   const [renameFolderName, setRenameFolderName] = useState('');
   const [moveDestination, setMoveDestination] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchFolders(null); // Fetch root folders
@@ -54,9 +55,9 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
 
     try {
       await createFolder(newFolderName.trim());
-      await fetchFolders(null); // Refresh the folder list
       setNewFolderName('');
       setShowNewFolderModal(false);
+      await fetchFolders(null); // Refresh the folder list
     } catch (err) {
       console.error('Failed to create folder:', err);
     }
@@ -67,24 +68,35 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
 
     try {
       await updateFolder(selectedItems[0], { name: renameFolderName.trim() });
-      await fetchFolders(null); // Refresh the folder list
       setRenameFolderName('');
       setShowRenameModal(false);
       setSelectedItems([]);
+      await fetchFolders(null); // Refresh the folder list
     } catch (err) {
       console.error('Failed to rename folder:', err);
     }
   };
 
   const handleDelete = async () => {
-    if (selectedItems.length === 0) return;
+    if (selectedItems.length === 0 || isDeleting) return;
 
     try {
-      await Promise.all(selectedItems.map(id => deleteFolder(id)));
-      await fetchFolders(null); // Refresh the folder list
+      setIsDeleting(true);
+      
+      // Delete folders one by one
+      for (const id of selectedItems) {
+        await deleteFolder(id);
+      }
+
+      // Clear selection
       setSelectedItems([]);
+      
+      // Refresh the folder list
+      await fetchFolders(null);
     } catch (err) {
       console.error('Failed to delete folders:', err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -95,10 +107,10 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
       await Promise.all(selectedItems.map(id => 
         updateFolder(id, { parent_id: moveDestination })
       ));
-      await fetchFolders(null); // Refresh the folder list
       setShowMoveModal(false);
       setSelectedItems([]);
       setMoveDestination('');
+      await fetchFolders(null); // Refresh the folder list
     } catch (err) {
       console.error('Failed to move folders:', err);
     }
