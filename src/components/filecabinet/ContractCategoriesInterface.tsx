@@ -1,14 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Folder, Plus, Trash2, Edit2, MoveRight, Search } from 'lucide-react';
-
-interface Vendor {
-  id: string;
-  name: string;
-  documents: number;
-  actions: number;
-  lastModified: string;
-  status: 'active' | 'pending' | 'expired';
-}
+import { useFileCabinet } from '../../hooks/useFileCabinet';
 
 interface ContractCategoriesInterfaceProps {
   onBack: () => void;
@@ -16,14 +8,20 @@ interface ContractCategoriesInterfaceProps {
   branchName: string;
 }
 
-const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = ({ onBack, onVendorSelect, branchName }) => {
-  const [vendors, setVendors] = useState<Vendor[]>([
-    { id: 'v1', name: 'Vendor A', documents: 12, actions: 5, lastModified: '2025-04-15', status: 'active' },
-    { id: 'v2', name: 'Vendor B', documents: 8, actions: 3, lastModified: '2025-04-10', status: 'active' },
-    { id: 'v3', name: 'Vendor C', documents: 15, actions: 7, lastModified: '2025-04-22', status: 'pending' },
-    { id: 'v4', name: 'Vendor D', documents: 6, actions: 2, lastModified: '2025-04-05', status: 'expired' },
-    { id: 'v5', name: 'Vendor E', documents: 10, actions: 4, lastModified: '2025-04-18', status: 'active' }
-  ]);
+const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = ({ 
+  onBack, 
+  onVendorSelect, 
+  branchName 
+}) => {
+  const { 
+    folders,
+    loading,
+    error,
+    fetchFolders,
+    createFolder,
+    updateFolder,
+    deleteFolder
+  } = useFileCabinet();
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,6 +31,10 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
   const [newFolderName, setNewFolderName] = useState('');
   const [renameFolderName, setRenameFolderName] = useState('');
   const [moveDestination, setMoveDestination] = useState('');
+
+  useEffect(() => {
+    fetchFolders(null); // Fetch root folders
+  }, []);
 
   const handleSelectItem = (id: string, name: string, isDoubleClick: boolean = false) => {
     if (isDoubleClick) {
@@ -47,39 +49,39 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
     );
   };
 
-  const handleNewFolder = () => {
-    if (newFolderName.trim()) {
-      const newVendor: Vendor = {
-        id: `v${Date.now()}`,
-        name: newFolderName.trim(),
-        documents: 0,
-        actions: 0,
-        lastModified: new Date().toISOString().split('T')[0],
-        status: 'active'
-      };
-      setVendors([...vendors, newVendor]);
+  const handleNewFolder = async () => {
+    if (!newFolderName.trim()) return;
+
+    try {
+      await createFolder(newFolderName.trim());
       setNewFolderName('');
       setShowNewFolderModal(false);
+    } catch (err) {
+      console.error('Failed to create folder:', err);
     }
   };
 
-  const handleRename = () => {
-    if (renameFolderName.trim() && selectedItems.length === 1) {
-      setVendors(vendors.map(vendor => 
-        vendor.id === selectedItems[0]
-          ? { ...vendor, name: renameFolderName.trim() }
-          : vendor
-      ));
+  const handleRename = async () => {
+    if (!renameFolderName.trim() || selectedItems.length !== 1) return;
+
+    try {
+      await updateFolder(selectedItems[0], { name: renameFolderName.trim() });
       setRenameFolderName('');
       setShowRenameModal(false);
       setSelectedItems([]);
+    } catch (err) {
+      console.error('Failed to rename folder:', err);
     }
   };
 
-  const handleDelete = () => {
-    if (selectedItems.length > 0) {
-      setVendors(vendors.filter(vendor => !selectedItems.includes(vendor.id)));
+  const handleDelete = async () => {
+    if (selectedItems.length === 0) return;
+
+    try {
+      await Promise.all(selectedItems.map(id => deleteFolder(id)));
       setSelectedItems([]);
+    } catch (err) {
+      console.error('Failed to delete folders:', err);
     }
   };
 
@@ -94,13 +96,33 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
 
   const openRenameModal = () => {
     if (selectedItems.length === 1) {
-      const selectedVendor = vendors.find(v => v.id === selectedItems[0]);
-      if (selectedVendor) {
-        setRenameFolderName(selectedVendor.name);
+      const selectedFolder = folders.find(f => f.id === selectedItems[0]);
+      if (selectedFolder) {
+        setRenameFolderName(selectedFolder.name);
         setShowRenameModal(true);
       }
     }
   };
+
+  const filteredFolders = folders.filter(folder => 
+    folder.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+        Error: {error}
+      </div>
+    );
+  }
 
   return (
     <div className="h-full bg-white rounded-lg shadow-sm">
@@ -170,8 +192,8 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
               <th className="w-8 p-4">
                 <input
                   type="checkbox"
-                  checked={selectedItems.length === vendors.length && vendors.length > 0}
-                  onChange={() => setSelectedItems(selectedItems.length === vendors.length ? [] : vendors.map(v => v.id))}
+                  checked={selectedItems.length === folders.length && folders.length > 0}
+                  onChange={() => setSelectedItems(selectedItems.length === folders.length ? [] : folders.map(f => f.id))}
                   className="rounded border-gray-300"
                 />
               </th>
@@ -183,20 +205,20 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {vendors.map((vendor) => (
+            {filteredFolders.map((folder) => (
               <tr
-                key={vendor.id}
+                key={folder.id}
                 className={`hover:bg-gray-50 cursor-pointer ${
-                  selectedItems.includes(vendor.id) ? 'bg-blue-50' : ''
+                  selectedItems.includes(folder.id) ? 'bg-blue-50' : ''
                 }`}
-                onClick={() => handleSelectItem(vendor.id, vendor.name)}
-                onDoubleClick={() => handleSelectItem(vendor.id, vendor.name, true)}
+                onClick={() => handleSelectItem(folder.id, folder.name)}
+                onDoubleClick={() => handleSelectItem(folder.id, folder.name, true)}
               >
                 <td className="p-4">
                   <input
                     type="checkbox"
-                    checked={selectedItems.includes(vendor.id)}
-                    onChange={() => handleSelectItem(vendor.id, vendor.name)}
+                    checked={selectedItems.includes(folder.id)}
+                    onChange={() => handleSelectItem(folder.id, folder.name)}
                     onClick={(e) => e.stopPropagation()}
                     className="rounded border-gray-300"
                   />
@@ -204,19 +226,19 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
                 <td className="p-4">
                   <div className="flex items-center">
                     <Folder className="text-blue-500 mr-2" size={20} />
-                    <span className="text-blue-600">{vendor.name}</span>
+                    <span className="text-blue-600">{folder.name}</span>
                   </div>
                 </td>
-                <td className="p-4">{vendor.documents}</td>
-                <td className="p-4">{vendor.actions}</td>
-                <td className="p-4">{vendor.lastModified}</td>
+                <td className="p-4">{folder.documents}</td>
+                <td className="p-4">{folder.actions}</td>
+                <td className="p-4">{folder.lastModified}</td>
                 <td className="p-4">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    vendor.status === 'active' ? 'bg-green-100 text-green-800' :
-                    vendor.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    folder.status === 'active' ? 'bg-green-100 text-green-800' :
+                    folder.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                     'bg-red-100 text-red-800'
                   }`}>
-                    {vendor.status}
+                    {folder.status}
                   </span>
                 </td>
               </tr>
