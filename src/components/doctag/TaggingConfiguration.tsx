@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, Plus, Edit2, Trash2, Upload, X, Settings } from 'lucide-react';
 import TagImport from './TagImport';
+import { supabase } from '../../lib/supabase';
 
-interface TagType {
+interface Tag {
   id: string;
-  tagId: string; 
-  documentTitle: string;
-  status: 'Active' | 'Inactive';
-  createdDate: string;
-  lastUpdated: string;
+  tag_id: string;
+  document_title: string;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
 }
 
 const TaggingConfiguration: React.FC = () => {
@@ -18,25 +19,36 @@ const TaggingConfiguration: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [tags, setTags] = useState<TagType[]>([
-    {
-      id: '1',
-      tagId: 'A-14',
-      documentTitle: 'Request for Expression of Interest',
-      status: 'Active',
-      createdDate: '2025-05-01',
-      lastUpdated: '2025-05-01'
+  useEffect(() => {
+    fetchTags();
+  }, []);
+
+  const fetchTags = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('doctag_documents')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setTags(data || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching tags:', err);
+      setError('Failed to load tags');
+    } finally {
+      setLoading(false);
     }
-  ]);
-
-  const handleAddTag = () => {
-    setShowAddModal(false);
   };
 
   const handleImportComplete = () => {
     setShowImportModal(false);
-    // Refresh tags list
+    fetchTags();
   };
 
   const getStatusColor = (status: string) => {
@@ -52,75 +64,59 @@ const TaggingConfiguration: React.FC = () => {
 
   const filteredTags = tags.filter(tag => {
     const matchesSearch = searchTerm === '' || 
-      tag.tagId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tag.documentTitle.toLowerCase().includes(searchTerm.toLowerCase());
+      tag.tag_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tag.document_title.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = filterStatus === 'all' || tag.status.toLowerCase() === filterStatus.toLowerCase();
     
     return matchesSearch && matchesStatus;
   });
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toISOString().split('T')[0];
+  };
+
   return (
     <div className="space-y-6">
-      {/* Search & Filter Section */}
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Tag Management</h2>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
-            >
-              <Upload size={16} />
-              Import Tags
-            </button>
-            <button 
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
-              onClick={() => setShowAddModal(true)}
-            >
-              <Plus size={16} />
-              Add Tag
-            </button>
-          </div>
-        </div>
-
-        <div className="flex gap-4">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              placeholder="Search by tag ID or document title..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
-          </div>
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-semibold">Tag Management</h2>
+        <div className="flex gap-2">
           <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`p-2 border border-gray-200 rounded-lg hover:bg-gray-50 ${
-              showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : ''
-            }`}
+            onClick={() => setShowImportModal(true)}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
           >
-            <Filter size={20} />
+            <Upload size={16} />
+            Import Tags
+          </button>
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+            onClick={() => setShowAddModal(true)}
+          >
+            <Plus size={16} />
+            Add Tag
           </button>
         </div>
+      </div>
 
-        {showFilters && (
-          <div className="mt-4 grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg p-2"
-              >
-                <option value="all">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-        )}
+      {/* Search Bar */}
+      <div className="flex gap-4">
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            placeholder="Search by tag ID or document title..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+        </div>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+        >
+          <Filter size={20} />
+        </button>
       </div>
 
       {/* Tags Table */}
@@ -138,39 +134,59 @@ const TaggingConfiguration: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredTags.map((tag) => (
-                <tr key={tag.id} className="hover:bg-gray-50">
-                  <td className="p-4">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                      {tag.tagId}
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-900">{tag.documentTitle}</td>
-                  <td className="p-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(tag.status)}`}>
-                      {tag.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-600">{tag.createdDate}</td>
-                  <td className="p-4 text-gray-600">{tag.lastUpdated}</td>
-                  <td className="p-4">
-                    <div className="flex gap-2">
-                      <button 
-                        className="p-1 hover:bg-gray-100 rounded text-blue-600 hover:text-blue-800"
-                        title="Edit Tag"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        className="p-1 hover:bg-gray-100 rounded text-red-600 hover:text-red-800"
-                        title="Delete Tag"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-4 text-gray-500">
+                    Loading tags...
                   </td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-4 text-red-500">
+                    {error}
+                  </td>
+                </tr>
+              ) : filteredTags.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-4 text-gray-500">
+                    No tags found
+                  </td>
+                </tr>
+              ) : (
+                filteredTags.map((tag) => (
+                  <tr key={tag.id} className="hover:bg-gray-50">
+                    <td className="p-4">
+                      <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                        {tag.tag_id}
+                      </span>
+                    </td>
+                    <td className="p-4 text-gray-900">{tag.document_title}</td>
+                    <td className="p-4">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(tag.status)}`}>
+                        {tag.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-gray-600">{formatDate(tag.created_at)}</td>
+                    <td className="p-4 text-gray-600">{formatDate(tag.updated_at)}</td>
+                    <td className="p-4">
+                      <div className="flex gap-2">
+                        <button 
+                          className="p-1 hover:bg-gray-100 rounded text-blue-600 hover:text-blue-800"
+                          title="Edit Tag"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          className="p-1 hover:bg-gray-100 rounded text-red-600 hover:text-red-800"
+                          title="Delete Tag"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -190,58 +206,6 @@ const TaggingConfiguration: React.FC = () => {
               </button>
             </div>
             <TagImport onComplete={handleImportComplete} />
-          </div>
-        </div>
-      )}
-
-      {/* Add Tag Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Add Tag</h3>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tag ID</label>
-                <input
-                  type="text"
-                  placeholder="Enter tag ID (e.g., A-14)"
-                  className="w-full p-2 border border-gray-200 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Document Title</label>
-                <input
-                  type="text"
-                  placeholder="Enter document title"
-                  className="w-full p-2 border border-gray-200 rounded-lg"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 mt-6">
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddTag}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                >
-                  Add Tag
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}
