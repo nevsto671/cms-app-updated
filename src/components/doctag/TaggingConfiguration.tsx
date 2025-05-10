@@ -20,13 +20,7 @@ const TaggingConfiguration: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [selectedTag, setSelectedTag] = useState<TagType | null>(null);
-  const [newTag, setNewTag] = useState({
-    type: '',
-    description: '',
-    startingNumber: ''
-  });
-
-  const mockTags: TagType[] = [
+  const [tags, setTags] = useState<TagType[]>([
     {
       id: '1',
       type: 'S',
@@ -54,10 +48,25 @@ const TaggingConfiguration: React.FC = () => {
       totalUsed: 11,
       lastUsed: '2025-05-08'
     }
-  ];
+  ]);
+  const [newTag, setNewTag] = useState({
+    type: '',
+    description: '',
+    startingNumber: ''
+  });
 
   const handleAddTag = () => {
     if (newTag.type && newTag.description) {
+      const newTagItem: TagType = {
+        id: `${Date.now()}`,
+        type: newTag.type.toUpperCase(),
+        number: parseInt(newTag.startingNumber) || 1,
+        description: newTag.description,
+        nextNumber: parseInt(newTag.startingNumber) || 1,
+        totalUsed: 0,
+        lastUsed: new Date().toISOString().split('T')[0]
+      };
+      setTags([...tags, newTagItem]);
       setShowAddModal(false);
       setNewTag({ type: '', description: '', startingNumber: '' });
     }
@@ -74,18 +83,35 @@ const TaggingConfiguration: React.FC = () => {
   };
 
   const handleConfirmEdit = () => {
-    // Implement edit logic here
+    if (selectedTag) {
+      setTags(tags.map(tag => 
+        tag.id === selectedTag.id ? selectedTag : tag
+      ));
+    }
     setShowEditModal(false);
     setSelectedTag(null);
   };
 
   const handleConfirmDelete = () => {
-    // Implement delete logic here
+    if (selectedTag) {
+      setTags(tags.filter(tag => tag.id !== selectedTag.id));
+      setSelectedTags(selectedTags.filter(id => id !== selectedTag.id));
+    }
     setShowDeleteModal(false);
     setSelectedTag(null);
   };
 
   const formatTagNumber = (tag: TagType) => `${tag.type}${tag.number}`;
+
+  const filteredTags = tags.filter(tag => {
+    const matchesSearch = searchTerm === '' || 
+      formatTagNumber(tag).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tag.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = filterType === 'all' || tag.type === filterType;
+    
+    return matchesSearch && matchesType;
+  });
 
   return (
     <div className="space-y-6">
@@ -164,10 +190,10 @@ const TaggingConfiguration: React.FC = () => {
                 <th className="w-8 p-4">
                   <input
                     type="checkbox"
-                    checked={selectedTags.length === mockTags.length}
+                    checked={selectedTags.length === filteredTags.length && filteredTags.length > 0}
                     onChange={() => {
                       setSelectedTags(
-                        selectedTags.length === mockTags.length ? [] : mockTags.map(t => t.id)
+                        selectedTags.length === filteredTags.length ? [] : filteredTags.map(t => t.id)
                       );
                     }}
                     className="rounded border-gray-300"
@@ -182,7 +208,7 @@ const TaggingConfiguration: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {mockTags.map((tag) => (
+              {filteredTags.map((tag) => (
                 <tr key={tag.id} className="hover:bg-gray-50">
                   <td className="p-4">
                     <input
@@ -240,7 +266,7 @@ const TaggingConfiguration: React.FC = () => {
         <div className="p-4 border-t border-gray-200 bg-gray-50">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600">
-              Showing {mockTags.length} tag types
+              Showing {filteredTags.length} tag types
             </div>
             <div className="flex gap-2">
               <button className="px-3 py-1 border border-gray-200 rounded hover:bg-gray-100">
