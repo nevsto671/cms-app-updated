@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Activity, AlertCircle, Zap } from 'lucide-react';
+import { BarChart, Activity, AlertCircle, Zap, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const SystemDashboard: React.FC = () => {
@@ -7,10 +7,41 @@ const SystemDashboard: React.FC = () => {
   const [totalDocuments, setTotalDocuments] = useState(0);
   const [pendingTasks, setPendingTasks] = useState(0);
   const [systemHealth, setSystemHealth] = useState(98);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const getActiveUsers = async () => {
-      // Get users active in last 30 minutes
+  const checkAndRefreshSession = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = '/login';
+        return false;
+      }
+      
+      // Check if token needs refresh (if less than 5 minutes remaining)
+      const expiresAt = session.expires_at;
+      if (expiresAt) {
+        const expiresIn = expiresAt - Math.floor(Date.now() / 1000);
+        if (expiresIn < 300) { // less than 5 minutes
+          const { error } = await supabase.auth.refreshSession();
+          if (error) {
+            throw error;
+          }
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Session refresh error:', error);
+      window.location.href = '/login';
+      return false;
+    }
+  };
+
+  const getActiveUsers = async () => {
+    try {
+      const sessionValid = await checkAndRefreshSession();
+      if (!sessionValid) return;
+
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
       
       const { data, error } = await supabase
@@ -19,38 +50,72 @@ const SystemDashboard: React.FC = () => {
         .gt('last_activity', thirtyMinutesAgo.toISOString());
 
       if (error) {
-        console.error('Error fetching active users:', error);
-        return;
+        throw error;
       }
 
       setActiveUsers(data?.length || 0);
-    };
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching active users:', error);
+      setError('Failed to fetch active users');
+    }
+  };
 
-    const getDocumentCount = async () => {
+  const getDocumentCount = async () => {
+    try {
+      const sessionValid = await checkAndRefreshSession();
+      if (!sessionValid) return;
+
       const { count, error } = await supabase
         .from('doctag_documents')
         .select('*', { count: 'exact', head: true });
 
       if (error) {
-        console.error('Error fetching document count:', error);
-        return;
+        throw error;
       }
 
       setTotalDocuments(count || 0);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching document count:', error);
+      setError('Failed to fetch document count');
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      await Promise.all([getActiveUsers(), getDocumentCount()]);
+      setIsLoading(false);
     };
 
     // Initial fetch
-    getActiveUsers();
-    getDocumentCount();
+    fetchData();
 
     // Poll for updates every minute
-    const interval = setInterval(() => {
-      getActiveUsers();
-      getDocumentCount();
-    }, 60000);
+    const interval = setInterval(fetchData, 60000);
 
     return () => clearInterval(interval);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="w-5 h-5" />
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
