@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Search, Filter, Tag, SlidersHorizontal, Download, ChevronDown, ChevronUp, Bot, RefreshCw, Sparkles, Upload, X, Trash2 } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, Filter, Tag, SlidersHorizontal, Download, ChevronDown, ChevronUp, Bot, RefreshCw, Sparkles, Upload, X, Trash2, ArrowUp } from 'lucide-react';
 import { CatalogItem } from '../../types/catalog';
 import { useCatalog } from '../../hooks/useCatalog';
 import CatalogImport from './CatalogImport';
@@ -24,6 +24,23 @@ const CatalogSearch: React.FC<CatalogSearchProps> = ({ onImport, onExport }) => 
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
   const [showImport, setShowImport] = useState(false);
   const [showDatabaseManagement, setShowDatabaseManagement] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   const filteredItems = useMemo(() => {
     const searchResults = searchItems(searchTerm);
@@ -55,8 +72,8 @@ const CatalogSearch: React.FC<CatalogSearchProps> = ({ onImport, onExport }) => 
 
   const handleExport = () => {
     const exportData = items.map(item => ({
-      NAICS: '', // Add NAICS codes from catalog_codes
-      'PSC/SIC': '', // Add PSC/SIC codes from catalog_codes
+      NAICS: '',
+      'PSC/SIC': '',
       SIN: item.sin || '',
       Description: item.description || '',
       'Item No.': item.item_no || '',
@@ -340,6 +357,16 @@ const CatalogSearch: React.FC<CatalogSearchProps> = ({ onImport, onExport }) => 
           </div>
         </div>
       </div>
+
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600 transition-all duration-300 z-50"
+          aria-label="Back to top"
+        >
+          <ArrowUp size={20} />
+        </button>
+      )}
 
       {showImport && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
