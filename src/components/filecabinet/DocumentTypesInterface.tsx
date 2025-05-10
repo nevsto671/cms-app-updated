@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, FileText, File, Link, DollarSign, Briefcase, CheckSquare } from 'lucide-react';
+import { ChevronLeft, FileText, File, Link, DollarSign, Briefcase, CheckSquare } from 'lucide-react';
 
 interface DocumentTypesInterfaceProps {
   onBack: () => void;
