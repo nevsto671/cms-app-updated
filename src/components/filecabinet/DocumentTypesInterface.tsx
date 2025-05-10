@@ -19,6 +19,7 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
   const [showFilters, setShowFilters] = useState(false);
   const [showOverview, setShowOverview] = useState(true);
   const [showContractTitle, setShowContractTitle] = useState(true);
+  const [showOverviewSections, setShowOverviewSections] = useState(true);
 
   // Mock data for demonstration
   const actionDetails = {
@@ -168,8 +169,8 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
             icon={<FileText size={16} />}
             label="Overview"
             isOverviewTab={true}
-            isChecked={showOverview}
-            onCheckboxChange={() => setShowOverview(!showOverview)}
+            isChecked={showOverviewSections}
+            onCheckboxChange={() => setShowOverviewSections(!showOverviewSections)}
           />
           <TabButton
             active={activeTab === 'dataValues'}
@@ -218,65 +219,69 @@ const DocumentTypesInterface: React.FC<DocumentTypesInterfaceProps> = ({
 
       {/* Tab Content */}
       <div className="flex-1 overflow-auto">
-        {activeTab === 'overview' && showOverview && (
+        {activeTab === 'overview' && (
           <div className="space-y-6 p-6">
-            {/* General Information Section */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-4">General Information</h3>
-              <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                <div>
-                  <label className="block text-sm text-gray-600">Action Type</label>
-                  <div className="font-medium">{actionDetails.actionType}</div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Order #</label>
-                  <div className="font-medium">{actionDetails.orderId}</div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Action ID</label>
-                  <div className="font-medium text-blue-600">{actionDetails.actionId}</div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Status</label>
-                  <div className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                    {actionDetails.status}
+            {showOverviewSections && (
+              <>
+                {/* General Information Section */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-4">General Information</h3>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                    <div>
+                      <label className="block text-sm text-gray-600">Action Type</label>
+                      <div className="font-medium">{actionDetails.actionType}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Order #</label>
+                      <div className="font-medium">{actionDetails.orderId}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Action ID</label>
+                      <div className="font-medium text-blue-600">{actionDetails.actionId}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Status</label>
+                      <div className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                        {actionDetails.status}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Title</label>
+                      <div className="font-medium">{actionDetails.title}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Receipt</label>
+                      <div className="font-medium">{actionDetails.receipt}</div>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Title</label>
-                  <div className="font-medium">{actionDetails.title}</div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Receipt</label>
-                  <div className="font-medium">{actionDetails.receipt}</div>
-                </div>
-              </div>
-            </div>
 
-            {/* Financial Information Section */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
-              <div className="grid grid-cols-3 gap-8">
-                <div>
-                  <label className="block text-sm text-gray-600">Committed</label>
-                  <div className="font-medium">{actionDetails.committed}</div>
+                {/* Financial Information Section */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
+                  <div className="grid grid-cols-3 gap-8">
+                    <div>
+                      <label className="block text-sm text-gray-600">Committed</label>
+                      <div className="font-medium">{actionDetails.committed}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Budgeted</label>
+                      <div className="font-medium">{actionDetails.budgeted}</div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">Total Cost</label>
+                      <div className="font-medium">{actionDetails.totalCost}</div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Budgeted</label>
-                  <div className="font-medium">{actionDetails.budgeted}</div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600">Total Cost</label>
-                  <div className="font-medium">{actionDetails.totalCost}</div>
-                </div>
-              </div>
-            </div>
 
-            {/* Notes Section */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-4">Notes</h3>
-              <p className="text-gray-600 italic">No notes have been added to this action.</p>
-            </div>
+                {/* Notes Section */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-4">Notes</h3>
+                  <p className="text-gray-600 italic">No notes have been added to this action.</p>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -353,8 +358,12 @@ const TabButton: React.FC<TabButtonProps> = ({
       <input 
         type="checkbox" 
         checked={isChecked} 
-        onChange={onCheckboxChange}
-        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => {
+          e.stopPropagation();
+          if (onCheckboxChange) {
+            onCheckboxChange();
+          }
+        }}
         className="h-3 w-3 mr-1" 
       />
     )}
