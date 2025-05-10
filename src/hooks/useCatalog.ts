@@ -1,46 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { CatalogItem } from '../types/catalog';
 
 export const useCatalog = () => {
-  const [items, setItems] = useState<CatalogItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchCatalogItems = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('catalog_items')
-        .select(`
-          *,
-          catalog_codes (
-            code_type,
-            code
-          ),
-          catalog_tags (
-            tag
-          )
-        `);
+  const fetchCatalogItems = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('catalog_items')
+      .select(`
+        *,
+        catalog_codes (
+          code_type,
+          code
+        ),
+        catalog_tags (
+          tag
+        )
+      `);
 
-      if (error) throw error;
-      setItems(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch catalog items');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCatalogItems();
+    if (error) throw error;
+    return data || [];
   }, []);
 
-  const searchItems = (searchTerm: string) => {
-    if (!searchTerm.trim()) return items;
+  const { data: items = [], isLoading, error } = useQuery({
+    queryKey: ['catalog-items'],
+    queryFn: fetchCatalogItems,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    cacheTime: 30 * 60 * 1000 // Cache for 30 minutes
+  });
 
-    const term = searchTerm.toLowerCase().trim();
+  const searchItems = useCallback((term: string) => {
+    if (!term.trim()) return items;
+
+    const searchTerm = term.toLowerCase().trim();
     return items.filter(item => {
-      // Search through all text fields
       const searchableFields = [
         item.title,
         item.description,
@@ -54,27 +50,36 @@ export const useCatalog = () => {
         item.sin
       ];
 
-      // Search through catalog codes
       const codes = item.catalog_codes?.map(code => `${code.code_type} ${code.code}`) || [];
       searchableFields.push(...codes);
 
-      // Search through tags
       const tags = item.catalog_tags?.map(tag => tag.tag) || [];
       searchableFields.push(...tags);
 
-      // Convert numeric fields to string for searching
       if (item.govt_price) {
         searchableFields.push(item.govt_price.toString());
       }
 
-      // Join all fields and search
       return searchableFields
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
-        .includes(term);
+        .includes(searchTerm);
     });
-  };
+  }, [items]);
 
-  return { items, loading, error, refetch: fetchCatalogItems, searchItems };
+  const filteredItems = useMemo(() => searchItems(searchTerm), [searchItems, searchTerm]);
+
+  const refetch = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['catalog-items'] });
+  }, [queryClient]);
+
+  return {
+    items: filteredItems,
+    loading: isLoading,
+    error: error ? (error instanceof Error ? error.message : 'An error occurred') : null,
+    refetch,
+    searchItems,
+    setSearchTerm
+  };
 };

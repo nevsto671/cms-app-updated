@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronDown, Filter, Search, Bot, Sparkles, MessageSquare } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { ChevronLeft, ChevronDown, Lock, Bot, Sparkles, MessageSquare } from 'lucide-react';
 
 interface TeamMember {
   id: string;
@@ -118,13 +118,16 @@ const workflowSteps: WorkflowStep[] = [
   }
 ];
 
-const WorkflowVisualization: React.FC<WorkflowVisualizationProps> = ({ isExpanded, onToggle }) => {
+const WorkflowVisualization: React.FC<WorkflowVisualizationProps> = React.memo(({ 
+  isExpanded, 
+  onToggle 
+}) => {
   const [expandedSteps, setExpandedSteps] = useState<string[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
-  const handleStepClick = (stepId: string) => {
+  const handleStepClick = useCallback((stepId: string) => {
     setExpandedSteps(prev => {
       if (prev.includes(stepId)) {
         return prev.filter(id => id !== stepId);
@@ -134,9 +137,9 @@ const WorkflowVisualization: React.FC<WorkflowVisualizationProps> = ({ isExpande
     if (stepId === 'team-assignment') {
       setSelectedTeam(null);
     }
-  };
+  }, []);
 
-  const toggleFilter = (stepId: string, filterName: string, option: string) => {
+  const toggleFilter = useCallback((stepId: string, filterName: string, option: string) => {
     setSelectedFilters(prev => {
       const key = `${stepId}-${filterName}`;
       const currentFilters = prev[key] || [];
@@ -149,15 +152,15 @@ const WorkflowVisualization: React.FC<WorkflowVisualizationProps> = ({ isExpande
         [key]: newFilters
       };
     });
-  };
+  }, []);
 
-  const getSelectedFiltersCount = (stepId: string) => {
+  const getSelectedFiltersCount = useCallback((stepId: string) => {
     return Object.entries(selectedFilters)
       .filter(([key]) => key.startsWith(stepId))
       .reduce((count, [, filters]) => count + filters.length, 0);
-  };
+  }, [selectedFilters]);
 
-  const clearStepFilters = (stepId: string) => {
+  const clearStepFilters = useCallback((stepId: string) => {
     setSelectedFilters(prev => {
       const newFilters = { ...prev };
       Object.keys(newFilters)
@@ -165,13 +168,13 @@ const WorkflowVisualization: React.FC<WorkflowVisualizationProps> = ({ isExpande
         .forEach(key => delete newFilters[key]);
       return newFilters;
     });
-  };
+  }, []);
 
-  const getWorkloadColor = (percentage: number) => {
+  const getWorkloadColor = useCallback((percentage: number) => {
     if (percentage > 75) return 'text-red-600';
     if (percentage > 50) return 'text-yellow-600';
     return 'text-green-600';
-  };
+  }, []);
 
   return (
     <div 
@@ -206,7 +209,7 @@ const WorkflowVisualization: React.FC<WorkflowVisualizationProps> = ({ isExpande
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-[#2a2f3a] border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
               />
-              <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+              <Lock className="absolute left-3 top-2.5 text-gray-400" size={20} />
             </div>
           </div>
         </div>
@@ -350,6 +353,8 @@ const WorkflowVisualization: React.FC<WorkflowVisualizationProps> = ({ isExpande
       </div>
     </div>
   );
-};
+});
+
+WorkflowVisualization.displayName = 'WorkflowVisualization';
 
 export default WorkflowVisualization;
