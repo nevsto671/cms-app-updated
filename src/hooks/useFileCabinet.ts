@@ -104,16 +104,22 @@ export const useFileCabinet = () => {
 
   const createFolder = async (name: string, parentId: string | null = null) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       const { data, error } = await supabase
         .from('file_cabinet_folders')
         .insert([
-          { name, parent_id: parentId }
+          { 
+            name, 
+            parent_id: parentId,
+            created_by: user.id
+          }
         ])
         .select()
         .single();
 
       if (error) throw error;
-      setFolders([...folders, data]);
       return data;
     } catch (err) {
       console.error('Error creating folder:', err);
@@ -125,13 +131,15 @@ export const useFileCabinet = () => {
     try {
       const { data, error } = await supabase
         .from('file_cabinet_folders')
-        .update(updates)
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      setFolders(folders.map(f => f.id === id ? data : f));
       return data;
     } catch (err) {
       console.error('Error updating folder:', err);
@@ -147,7 +155,6 @@ export const useFileCabinet = () => {
         .eq('id', id);
 
       if (error) throw error;
-      setFolders(folders.filter(f => f.id !== id));
     } catch (err) {
       console.error('Error deleting folder:', err);
       throw err;

@@ -54,6 +54,7 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
 
     try {
       await createFolder(newFolderName.trim());
+      await fetchFolders(null); // Refresh the folder list
       setNewFolderName('');
       setShowNewFolderModal(false);
     } catch (err) {
@@ -66,6 +67,7 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
 
     try {
       await updateFolder(selectedItems[0], { name: renameFolderName.trim() });
+      await fetchFolders(null); // Refresh the folder list
       setRenameFolderName('');
       setShowRenameModal(false);
       setSelectedItems([]);
@@ -79,18 +81,26 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
 
     try {
       await Promise.all(selectedItems.map(id => deleteFolder(id)));
+      await fetchFolders(null); // Refresh the folder list
       setSelectedItems([]);
     } catch (err) {
       console.error('Failed to delete folders:', err);
     }
   };
 
-  const handleMove = () => {
-    if (selectedItems.length > 0 && moveDestination) {
-      // Implement move logic here
+  const handleMove = async () => {
+    if (selectedItems.length === 0 || !moveDestination) return;
+
+    try {
+      await Promise.all(selectedItems.map(id => 
+        updateFolder(id, { parent_id: moveDestination })
+      ));
+      await fetchFolders(null); // Refresh the folder list
       setShowMoveModal(false);
       setSelectedItems([]);
       setMoveDestination('');
+    } catch (err) {
+      console.error('Failed to move folders:', err);
     }
   };
 
