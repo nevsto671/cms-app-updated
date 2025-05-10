@@ -12,13 +12,15 @@ interface ImportStatus {
 
 // CSV template headers and example row
 const CSV_HEADERS = [
-  'tag_no',
-  'description'
+  'Tag_Type',
+  'Tag_Number',
+  'Document_Title'
 ];
 
 const CSV_EXAMPLE = [
-  'S1',
-  'Solicitation Documents'
+  'S',
+  '1',
+  'Request for Expression of Interest'
 ];
 
 const TagImport: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
@@ -63,7 +65,6 @@ const TagImport: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   };
 
   const downloadTemplate = () => {
-    // Create CSV content with headers and example row
     const csvContent = [
       CSV_HEADERS.join(','),
       CSV_EXAMPLE.map(field => `"${field}"`).join(',')
@@ -81,13 +82,25 @@ const TagImport: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   };
 
   const validateRow = (row: any): boolean => {
-    const requiredFields = ['tag_no', 'description'];
-    return requiredFields.every(field => {
-      if (!(field in row)) {
-        throw new Error(`Missing required field: ${field}`);
+    // Validate Tag_Type
+    if (!row.Tag_Type || !['S', 'P', 'C'].includes(row.Tag_Type.toUpperCase())) {
+      throw new Error(`Invalid Tag_Type: ${row.Tag_Type}. Must be S, P, or C`);
+    }
+
+    // Validate Tag_Number if provided
+    if (row.Tag_Number) {
+      const num = parseInt(row.Tag_Number);
+      if (isNaN(num) || num < 1 || num > 999) {
+        throw new Error(`Invalid Tag_Number: ${row.Tag_Number}. Must be between 1 and 999`);
       }
-      return true;
-    });
+    }
+
+    // Validate Document_Title
+    if (!row.Document_Title?.trim()) {
+      throw new Error('Document_Title is required');
+    }
+
+    return true;
   };
 
   const processImport = async (rows: any[]) => {
@@ -105,20 +118,17 @@ const TagImport: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
           throw new Error('Invalid row structure');
         }
 
-        // Parse tag number into type and number
-        const tagMatch = row.tag_no.match(/^([A-Za-z])(\d+)$/);
-        if (!tagMatch) {
-          throw new Error(`Invalid tag number format: ${row.tag_no}`);
-        }
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
 
-        const [, tagType, tagNumber] = tagMatch;
-
+        // Insert document
         const { error } = await supabase
-          .from('tag_types')
+          .from('doctag_documents')
           .insert({
-            code: tagType.toUpperCase(),
-            document_type: tagType.toUpperCase(),
-            description: row.description
+            tag_type: row.Tag_Type.toUpperCase(),
+            tag_number: row.Tag_Number || null, // Will use DB-generated number if null
+            document_title: row.Document_Title.trim(),
+            created_by: user.id
           });
 
         if (error) throw error;
