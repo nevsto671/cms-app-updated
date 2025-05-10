@@ -67,11 +67,10 @@ const TagImport: React.FC<TagImportProps> = ({ onComplete }) => {
             // Process each row and insert into database
             for (const row of results.data) {
               const { data, error } = await supabase
-                .from('doctag_documents')
+                .from('tag_types')
                 .insert({
-                  tag_type: row.code,
-                  tag_number: parseInt(row.tag_id.split('-')[1]),
-                  title: row.document_title,
+                  code: row.code,
+                  document_type: row.document_type,
                   description: row.description
                 });
 
