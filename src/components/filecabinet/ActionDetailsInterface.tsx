@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, ChevronLeft, FileText, RefreshCw, Trash2, FolderMove, BarChart2, Folder, DollarSign, FileBox, Link, Briefcase, Calendar, CheckSquare } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronLeft, FileText, RefreshCw, Trash2, Folder as FolderMove, BarChart2, Folder, DollarSign, FileBox, Link, Briefcase, Calendar, CheckSquare } from 'lucide-react';
 
 interface ActionDetailsInterfaceProps {
   onBack: () => void;
