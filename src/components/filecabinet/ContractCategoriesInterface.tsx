@@ -92,16 +92,6 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
     }
   };
 
-  const openRenameModal = () => {
-    if (selectedItems.length === 1) {
-      const selectedVendor = vendors.find(v => v.id === selectedItems[0]);
-      if (selectedVendor) {
-        setRenameFolderName(selectedVendor.name);
-        setShowRenameModal(true);
-      }
-    }
-  };
-
   return (
     <div className="bg-white rounded-lg shadow-sm h-full flex flex-col">
       <div className="bg-[#1c1f26] text-white px-4 py-3 flex items-center rounded-t-lg">
@@ -141,7 +131,7 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
           </button>
 
           <button
-            onClick={openRenameModal}
+            onClick={() => setShowRenameModal(true)}
             disabled={selectedItems.length !== 1}
             className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -237,7 +227,7 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
       {showNewFolderModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Create New Folder</h2>
+            <h3 className="text-lg font-semibold mb-4">Create New Folder</h3>
             <input
               type="text"
               value={newFolderName}
@@ -268,7 +258,7 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
       {showRenameModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Rename Folder</h2>
+            <h3 className="text-lg font-semibold mb-4">Rename Folder</h3>
             <input
               type="text"
               value={renameFolderName}
@@ -299,7 +289,7 @@ const ContractCategoriesInterface: React.FC<ContractCategoriesInterfaceProps> = 
       {showMoveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Move Folder</h2>
+            <h3 className="text-lg font-semibold mb-4">Move Folder</h3>
             <select
               value={moveDestination}
               onChange={(e) => setMoveDestination(e.target.value)}

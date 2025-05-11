@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ActionDetailsInterface from './ActionDetailsInterface';
 import ContractCategoriesInterface from './ContractCategoriesInterface';
+import DocumentTypesInterface from './DocumentTypesInterface';
 
 interface FolderViewProps {
   branchId: string;
@@ -23,10 +24,9 @@ const FolderView: React.FC<FolderViewProps> = ({ branchId, branchName, onBack })
 
   if (selectedVendor) {
     return (
-      <ContractCategoriesInterface
+      <DocumentTypesInterface
         onBack={() => setSelectedVendor(null)}
-        onVendorSelect={setSelectedVendor}
-        branchName={branchName}
+        vendorName="Vendor A"
       />
     );
   }

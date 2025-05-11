@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, ChevronLeft, FileText, RefreshCw, Trash2, Folder as FolderMove, BarChart2, Folder, DollarSign, FileBox, Link, Briefcase, Calendar, CheckSquare } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { ChevronLeft, ChevronDown, ChevronUp, FileText, RefreshCw, Trash2, Folder as FolderMove, BarChart2, Folder, DollarSign, FileBox, Link, Briefcase, Calendar, CheckSquare } from 'lucide-react';
 
 interface ActionDetailsInterfaceProps {
   onBack: () => void;
@@ -155,7 +155,13 @@ interface TabButtonProps {
   onClick: () => void;
 }
 
-const TabButton: React.FC<TabButtonProps> = ({ icon: Icon, label, count, isActive, onClick }) => (
+const TabButton: React.FC<TabButtonProps> = ({ 
+  icon: Icon, 
+  label, 
+  count, 
+  isActive, 
+  onClick 
+}) => (
   <button
     onClick={onClick}
     className={`px-4 py-2 border-r border-gray-200 flex items-center gap-2 whitespace-nowrap ${

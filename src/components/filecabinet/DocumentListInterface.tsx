@@ -91,39 +91,6 @@ const DocumentListInterface: React.FC<DocumentListInterfaceProps> = ({ onBack, o
     );
   };
 
-  const handleDelete = () => {
-    setDocuments(documents.filter(doc => !selectedItems.includes(doc.id)));
-    setSelectedItems([]);
-  };
-
-  const handleRename = () => {
-    if (renameDocumentName.trim() && selectedItems.length === 1) {
-      setDocuments(documents.map(doc => 
-        doc.id === selectedItems[0]
-          ? { ...doc, name: renameDocumentName.trim() }
-          : doc
-      ));
-      setRenameDocumentName('');
-      setShowRenameModal(false);
-      setSelectedItems([]);
-    }
-  };
-
-  const openRenameModal = () => {
-    if (selectedItems.length === 1) {
-      const selectedDoc = documents.find(d => d.id === selectedItems[0]);
-      if (selectedDoc) {
-        setRenameDocumentName(selectedDoc.name);
-        setShowRenameModal(true);
-      }
-    }
-  };
-
-  const filteredDocuments = documents.filter(doc =>
-    doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
   return (
     <div className="bg-white rounded-lg shadow-sm h-full flex flex-col">
       <div className="bg-[#1c1f26] text-white px-4 py-3 flex items-center rounded-t-lg">
@@ -147,7 +114,7 @@ const DocumentListInterface: React.FC<DocumentListInterfaceProps> = ({ onBack, o
           </button>
 
           <button
-            onClick={handleDelete}
+            onClick={() => handleDelete()}
             disabled={selectedItems.length === 0}
             className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -156,7 +123,7 @@ const DocumentListInterface: React.FC<DocumentListInterfaceProps> = ({ onBack, o
           </button>
 
           <button
-            onClick={openRenameModal}
+            onClick={() => setShowRenameModal(true)}
             disabled={selectedItems.length !== 1}
             className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -205,7 +172,7 @@ const DocumentListInterface: React.FC<DocumentListInterfaceProps> = ({ onBack, o
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredDocuments.map((doc) => (
+            {documents.map((doc) => (
               <tr
                 key={doc.id}
                 className={`hover:bg-gray-50 cursor-pointer ${
@@ -315,7 +282,10 @@ const DocumentListInterface: React.FC<DocumentListInterfaceProps> = ({ onBack, o
                 Cancel
               </button>
               <button
-                onClick={handleRename}
+                onClick={() => {
+                  // Handle rename logic
+                  setShowRenameModal(false);
+                }}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               >
                 Rename
