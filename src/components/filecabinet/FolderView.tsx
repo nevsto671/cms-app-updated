@@ -24,8 +24,9 @@ const FolderView: React.FC<FolderViewProps> = ({ branchId, branchName, onBack })
   if (selectedVendor) {
     return (
       <ContractCategoriesInterface
-        vendorId={selectedVendor}
         onBack={() => setSelectedVendor(null)}
+        onVendorSelect={setSelectedVendor}
+        branchName={branchName}
       />
     );
   }
@@ -33,7 +34,7 @@ const FolderView: React.FC<FolderViewProps> = ({ branchId, branchName, onBack })
   return (
     <ContractCategoriesInterface
       onBack={onBack}
-      onVendorSelect={(vendorId) => setSelectedVendor(vendorId)}
+      onVendorSelect={setSelectedVendor}
       branchName={branchName}
     />
   );
