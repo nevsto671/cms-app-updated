@@ -22,7 +22,8 @@ import {
   Folder,
   Archive,
   Tag,
-  FileBox
+  FileBox,
+  Briefcase
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -100,6 +101,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
                   />
                 </div>
               )}
+
+              <NavItem 
+                icon={<Briefcase size={16} />} 
+                title="Contract Administration" 
+                onClick={() => handleNavigation('/contract-administration')} 
+                active={location.pathname === '/contract-administration'} 
+                isCollapsed={isCollapsed}
+              />
 
               <NavItem 
                 icon={<FileBox size={16} />} 
