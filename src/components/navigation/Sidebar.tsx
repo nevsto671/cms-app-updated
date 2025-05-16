@@ -23,7 +23,8 @@ import {
   Archive,
   Tag,
   FileBox,
-  Briefcase
+  Briefcase,
+  DollarSign
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -107,6 +108,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
                 title="Contract Administration" 
                 onClick={() => handleNavigation('/contract-administration')} 
                 active={location.pathname === '/contract-administration'} 
+                isCollapsed={isCollapsed}
+              />
+
+              <NavItem 
+                icon={<DollarSign size={16} />} 
+                title="Price Analysis" 
+                onClick={() => handleNavigation('/price-analysis')} 
+                active={location.pathname === '/price-analysis'} 
                 isCollapsed={isCollapsed}
               />
 

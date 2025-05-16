@@ -18,6 +18,7 @@ import MRAS from './pages/MRAS';
 import FileCabinet from './pages/FileCabinet';
 import DocTagCentral from './pages/DocTagCentral';
 import ContractAdministration from './pages/ContractAdministration';
+import PriceAnalysis from './pages/PriceAnalysis';
 import { supabase } from './lib/supabase';
 import './App.css';
 
@@ -143,6 +144,7 @@ function App() {
                     <Route path="/file-cabinet" element={<FileCabinet />} />
                     <Route path="/doctag-central" element={<DocTagCentral />} />
                     <Route path="/contract-administration" element={<ContractAdministration />} />
+                    <Route path="/price-analysis" element={<PriceAnalysis />} />
                   </Routes>
                 </Layout>
               }
