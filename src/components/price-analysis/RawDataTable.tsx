@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, Filter, Download, ArrowUp, ArrowDown } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Search, Filter, Download, ArrowUp, ArrowDown, Upload, X } from 'lucide-react';
 import Papa from 'papaparse';
 
 interface PriceData {
@@ -85,6 +85,10 @@ const RawDataTable: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSIN, setSelectedSIN] = useState('All');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
+  const [data, setData] = useState<PriceData[]>(mockData);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSort = (field: keyof PriceData) => {
     if (sortField === field) {
@@ -96,7 +100,7 @@ const RawDataTable: React.FC = () => {
   };
 
   const handleExport = () => {
-    const csvData = mockData.map(item => ({
+    const csvData = data.map(item => ({
       'SIN': item.sin,
       'Model': item.model,
       'Commercial Price': formatCurrency(item.commercialPrice),
@@ -120,7 +124,80 @@ const RawDataTable: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const filteredData = mockData
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === 'text/csv') {
+      processFile(file);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const processFile = (file: File) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const parsedData = results.data.map((row: any) => ({
+          sin: row.SIN || '',
+          model: row.Model || '',
+          commercialPrice: parseFloat(row['Commercial Price']?.replace(/[^0-9.-]+/g, '') || '0'),
+          mfcPrice: parseFloat(row['MFC Price']?.replace(/[^0-9.-]+/g, '') || '0'),
+          mfcDiscount: parseFloat(row['MFC Discount']?.replace(/[^0-9.%-]+/g, '') || '0'),
+          proposedPrice: parseFloat(row['Proposed Price']?.replace(/[^0-9.-]+/g, '') || '0'),
+          proposedDiscount: parseFloat(row['Proposed Discount']?.replace(/[^0-9.%-]+/g, '') || '0'),
+          trackingRatio: parseFloat(row['Tracking Ratio'] || '0')
+        }));
+        setData(parsedData);
+        setShowUploadModal(false);
+      }
+    });
+  };
+
+  const downloadTemplate = () => {
+    const templateData = [{
+      'SIN': 'L39',
+      'Model': 'Example Model',
+      'Commercial Price': '$1000.00',
+      'MFC Price': '$800.00',
+      'MFC Discount': '20.00%',
+      'Proposed Price': '$750.00',
+      'Proposed Discount': '25.00%',
+      'Tracking Ratio': '1.25'
+    }];
+
+    const csv = Papa.unparse(templateData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'price_analysis_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredData = data
     .filter(item => {
       const matchesSearch = 
         item.sin.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -147,7 +224,7 @@ const RawDataTable: React.FC = () => {
         : String(bValue).localeCompare(String(aValue));
     });
 
-  const uniqueSINs = Array.from(new Set(mockData.map(item => item.sin)));
+  const uniqueSINs = Array.from(new Set(data.map(item => item.sin)));
 
   return (
     <div className="space-y-4">
@@ -174,13 +251,23 @@ const RawDataTable: React.FC = () => {
           </button>
         </div>
 
-        <button
-          onClick={handleExport}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
-        >
-          <Download size={16} />
-          Export Raw Data
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowUploadModal(true)}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
+          >
+            <Upload size={16} />
+            Upload Data
+          </button>
+
+          <button
+            onClick={handleExport}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+          >
+            <Download size={16} />
+            Export Data
+          </button>
+        </div>
       </div>
 
       {showFilters && (
@@ -221,11 +308,76 @@ const RawDataTable: React.FC = () => {
         </div>
       )}
 
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Upload Price Data</h3>
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-sm font-medium text-blue-800 mb-1">Need a template?</h3>
+                  <p className="text-sm text-blue-600">
+                    Download our CSV template file to ensure your data is formatted correctly
+                  </p>
+                </div>
+                <button
+                  onClick={downloadTemplate}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  <Download size={16} />
+                  Download Template
+                </button>
+              </div>
+            </div>
+
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center ${
+                dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                accept=".csv"
+                className="hidden"
+              />
+              <Upload size={32} className="mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-600 mb-2">
+                Drag and drop your CSV file here, or{' '}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-blue-500 hover:text-blue-600"
+                >
+                  browse
+                </button>
+              </p>
+              <p className="text-sm text-gray-500">
+                Supported format: CSV
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              {Object.keys(mockData[0]).map((key) => (
+              {Object.keys(data[0]).map((key) => (
                 <th
                   key={key}
                   onClick={() => handleSort(key as keyof PriceData)}
@@ -260,7 +412,7 @@ const RawDataTable: React.FC = () => {
 
       <div className="flex justify-between items-center text-sm text-gray-600 mt-4">
         <div>
-          Showing {filteredData.length} of {mockData.length} items
+          Showing {filteredData.length} of {data.length} items
         </div>
       </div>
     </div>
