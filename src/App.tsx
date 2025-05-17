@@ -26,12 +26,13 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+    let authListener: any = null;
 
-    // Enhanced session check with better error handling
-    const checkSession = async () => {
+    const initializeAuth = async () => {
       try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
@@ -41,7 +42,6 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsAuthenticated(false);
             setLoading(false);
           }
-          navigate('/login');
           return;
         }
 
@@ -50,27 +50,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsAuthenticated(false);
             setLoading(false);
           }
-          navigate('/login');
           return;
-        }
-
-        // Check token expiration
-        const expiresAt = session.expires_at ? new Date(session.expires_at * 1000) : null;
-        const now = new Date();
-        
-        if (expiresAt && (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000)) {
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-          
-          if (refreshError || !refreshData.session) {
-            console.error('Session refresh failed:', refreshError);
-            await supabase.auth.signOut();
-            if (mounted) {
-              setIsAuthenticated(false);
-              setLoading(false);
-            }
-            navigate('/login');
-            return;
-          }
         }
 
         if (mounted) {
@@ -78,48 +58,49 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false);
         }
       } catch (err) {
-        console.error('Session check failed:', err);
+        console.error('Auth initialization error:', err);
         if (mounted) {
           setIsAuthenticated(false);
           setLoading(false);
         }
-        navigate('/login');
+      } finally {
+        if (mounted) {
+          setInitialized(true);
+        }
       }
     };
 
-    checkSession();
+    // Initialize auth state
+    initializeAuth();
 
-    // Enhanced auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Set up auth state listener
+    authListener = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
       if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-        if (mounted) {
-          setIsAuthenticated(false);
-        }
+        setIsAuthenticated(false);
         navigate('/login');
-      } else if (event === 'TOKEN_REFRESHED') {
-        if (!session) {
-          await supabase.auth.signOut();
-          if (mounted) {
-            setIsAuthenticated(false);
-          }
-          navigate('/login');
-        } else {
-          if (mounted) {
-            setIsAuthenticated(true);
-          }
-        }
       } else if (event === 'SIGNED_IN' && session) {
-        if (mounted) {
-          setIsAuthenticated(true);
-        }
+        setIsAuthenticated(true);
       }
     });
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      if (authListener) {
+        authListener.subscription.unsubscribe();
+      }
     };
   }, [navigate]);
+
+  // Don't render anything until we've initialized auth
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-[#0B1222] flex items-center justify-center">
+        <div className="text-[#8B9CC8]">Initializing...</div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
