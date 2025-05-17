@@ -4,6 +4,7 @@ import Papa from 'papaparse';
 
 interface PriceData {
   sin: string;
+  itemNo: string;
   model: string;
   commercialPrice: number;
   mfcPrice: number;
@@ -16,6 +17,7 @@ interface PriceData {
 const mockData: PriceData[] = [
   {
     sin: 'L39',
+    itemNo: 'IT-001',
     model: 'Bandages Model 10',
     commercialPrice: 6722.00,
     mfcPrice: 4100.00,
@@ -26,6 +28,7 @@ const mockData: PriceData[] = [
   },
   {
     sin: 'L40',
+    itemNo: 'IT-002',
     model: 'Bandages Model 11',
     commercialPrice: 7121.00,
     mfcPrice: 5911.00,
@@ -36,6 +39,7 @@ const mockData: PriceData[] = [
   },
   {
     sin: 'F23',
+    itemNo: 'IT-003',
     model: 'Bandages Model 12',
     commercialPrice: 7271.00,
     mfcPrice: 5065.00,
@@ -46,6 +50,7 @@ const mockData: PriceData[] = [
   },
   {
     sin: 'F23',
+    itemNo: 'IT-004',
     model: 'Bandages Model 13',
     commercialPrice: 13303.00,
     mfcPrice: 12000.00,
@@ -56,6 +61,7 @@ const mockData: PriceData[] = [
   },
   {
     sin: 'F23',
+    itemNo: 'IT-005',
     model: 'Bandages Model 14',
     commercialPrice: 7573.00,
     mfcPrice: 19000.00,
@@ -102,6 +108,7 @@ const RawDataTable: React.FC = () => {
   const handleExport = () => {
     const csvData = data.map(item => ({
       'SIN': item.sin,
+      'Item #': item.itemNo,
       'Model': item.model,
       'Commercial Price': formatCurrency(item.commercialPrice),
       'MFC Price': formatCurrency(item.mfcPrice),
@@ -158,6 +165,7 @@ const RawDataTable: React.FC = () => {
       complete: (results) => {
         const parsedData = results.data.map((row: any) => ({
           sin: row.SIN || '',
+          itemNo: row['Item #'] || '',
           model: row.Model || '',
           commercialPrice: parseFloat(row['Commercial Price']?.replace(/[^0-9.-]+/g, '') || '0'),
           mfcPrice: parseFloat(row['MFC Price']?.replace(/[^0-9.-]+/g, '') || '0'),
@@ -175,6 +183,7 @@ const RawDataTable: React.FC = () => {
   const downloadTemplate = () => {
     const templateData = [{
       'SIN': 'L39',
+      'Item #': 'IT-001',
       'Model': 'Example Model',
       'Commercial Price': '$1000.00',
       'MFC Price': '$800.00',
@@ -201,6 +210,7 @@ const RawDataTable: React.FC = () => {
     .filter(item => {
       const matchesSearch = 
         item.sin.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.itemNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.model.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesSIN = selectedSIN === 'All' || item.sin === selectedSIN;
@@ -233,7 +243,7 @@ const RawDataTable: React.FC = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search by SIN or Model..."
+              placeholder="Search by SIN, Item #, or Model..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -377,26 +387,112 @@ const RawDataTable: React.FC = () => {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              {Object.keys(data[0]).map((key) => (
-                <th
-                  key={key}
-                  onClick={() => handleSort(key as keyof PriceData)}
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                >
-                  <div className="flex items-center gap-1">
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
-                    {sortField === key && (
-                      sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                    )}
-                  </div>
-                </th>
-              ))}
+              <th
+                onClick={() => handleSort('sin')}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              >
+                <div className="flex items-center gap-1">
+                  SIN
+                  {sortField === 'sin' && (
+                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  )}
+                </div>
+              </th>
+              <th
+                onClick={() => handleSort('itemNo')}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              >
+                <div className="flex items-center gap-1">
+                  Item #
+                  {sortField === 'itemNo' && (
+                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  )}
+                </div>
+              </th>
+              <th
+                onClick={() => handleSort('model')}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              >
+                <div className="flex items-center gap-1">
+                  Model
+                  {sortField === 'model' && (
+                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  )}
+                </div>
+              </th>
+              <th
+                onClick={() => handleSort('commercialPrice')}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              >
+                <div className="flex items-center gap-1">
+                  Commercial Price
+                  {sortField === 'commercialPrice' && (
+                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  )}
+                </div>
+              </th>
+              <th
+                onClick={() => handleSort('mfcPrice')}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              >
+                <div className="flex items-center gap-1">
+                  MFC Price
+                  {sortField === 'mfcPrice' && (
+                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  )}
+                </div>
+              </th>
+              <th
+                onClick={() => handleSort('mfcDiscount')}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              >
+                <div className="flex items-center gap-1">
+                  MFC Discount
+                  {sortField === 'mfcDiscount' && (
+                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  )}
+                </div>
+              </th>
+              <th
+                onClick={() => handleSort('proposedPrice')}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              >
+                <div className="flex items-center gap-1">
+                  Proposed Price
+                  {sortField === 'proposedPrice' && (
+                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  )}
+                </div>
+              </th>
+              <th
+                onClick={() => handleSort('proposedDiscount')}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              >
+                <div className="flex items-center gap-1">
+                  Proposed Discount
+                  {sortField === 'proposedDiscount' && (
+                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  )}
+                </div>
+              </th>
+              <th
+                onClick={() => handleSort('trackingRatio')}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              >
+                <div className="flex items-center gap-1">
+                  Tracking Ratio
+                  {sortField === 'trackingRatio' && (
+                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  )}
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredData.map((item, index) => (
-              <tr key={index} className="hover:bg-gray-50">
+            {filteredData.map((item) => (
+              <tr key={item.sin + item.itemNo} className="hover:bg-gray-50">
                 <td className="px-4 py-3 text-sm text-gray-900">{item.sin}</td>
+                <td className="px-4 py-3 text-sm text-gray-900">{item.itemNo}</td>
                 <td className="px-4 py-3 text-sm text-gray-900">{item.model}</td>
                 <td className="px-4 py-3 text-sm text-gray-900">{formatCurrency(item.commercialPrice)}</td>
                 <td className="px-4 py-3 text-sm text-gray-900">{formatCurrency(item.mfcPrice)}</td>
