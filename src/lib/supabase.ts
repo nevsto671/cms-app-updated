@@ -7,11 +7,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
+// Ensure consistent storage key usage
+const STORAGE_KEY = 'app-auth';
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    storageKey: 'app-auth',
+    storageKey: STORAGE_KEY,
     storage: window.localStorage,
     detectSessionInUrl: true,
     flowType: 'pkce'
@@ -23,24 +26,63 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Enhanced session refresh handler
+// Handle auth state changes
 supabase.auth.onAuthStateChange(async (event, session) => {
   if (event === 'TOKEN_REFRESHED' && !session) {
-    // If token refresh failed, clear the session
+    // Clear local storage to remove any stale tokens
+    window.localStorage.removeItem(STORAGE_KEY);
     await supabase.auth.signOut();
     window.location.href = '/login';
+    return;
+  }
+
+  if (event === 'SIGNED_OUT') {
+    // Clear local storage on sign out
+    window.localStorage.removeItem(STORAGE_KEY);
   }
 });
 
-// Add periodic token refresh check
-setInterval(async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    const { error } = await supabase.auth.refreshSession();
-    if (error) {
-      console.error('Session refresh failed:', error);
-      await supabase.auth.signOut();
+// Periodic session check and refresh
+const SESSION_CHECK_INTERVAL = 4 * 60 * 1000; // 4 minutes
+let sessionCheckTimeout: number;
+
+const checkAndRefreshSession = async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      clearTimeout(sessionCheckTimeout);
       window.location.href = '/login';
+      return;
     }
+
+    // Check if token expires in less than 5 minutes
+    const expiresAt = session.expires_at ? new Date(session.expires_at * 1000) : null;
+    const now = new Date();
+    
+    if (expiresAt && (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000)) {
+      const { error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error('Session refresh failed:', error);
+        await supabase.auth.signOut();
+        window.location.href = '/login';
+        return;
+      }
+    }
+  } catch (error) {
+    console.error('Session check failed:', error);
+    await supabase.auth.signOut();
+    window.location.href = '/login';
   }
-}, 5 * 60 * 1000); // Check every 5 minutes
+
+  // Schedule next check
+  sessionCheckTimeout = window.setTimeout(checkAndRefreshSession, SESSION_CHECK_INTERVAL);
+};
+
+// Start session checking
+checkAndRefreshSession();
+
+// Clean up on page unload
+window.addEventListener('unload', () => {
+  clearTimeout(sessionCheckTimeout);
+});

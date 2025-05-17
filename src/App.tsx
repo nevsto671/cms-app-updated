@@ -28,48 +28,62 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Enhanced session check
+    let mounted = true;
+
+    // Enhanced session check with better error handling
     const checkSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('Session error:', error);
-          setIsAuthenticated(false);
-          setLoading(false);
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          if (mounted) {
+            setIsAuthenticated(false);
+            setLoading(false);
+          }
           navigate('/login');
           return;
         }
 
         if (!session) {
-          setIsAuthenticated(false);
-          setLoading(false);
+          if (mounted) {
+            setIsAuthenticated(false);
+            setLoading(false);
+          }
           navigate('/login');
           return;
         }
 
-        // Verify token is not close to expiration
-        const tokenExpiry = new Date(session.expires_at! * 1000);
+        // Check token expiration
+        const expiresAt = session.expires_at ? new Date(session.expires_at * 1000) : null;
         const now = new Date();
-        const timeUntilExpiry = tokenExpiry.getTime() - now.getTime();
         
-        if (timeUntilExpiry < 5 * 60 * 1000) { // Less than 5 minutes until expiry
-          const { error: refreshError } = await supabase.auth.refreshSession();
-          if (refreshError) {
+        if (expiresAt && (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000)) {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError || !refreshData.session) {
             console.error('Session refresh failed:', refreshError);
-            setIsAuthenticated(false);
+            await supabase.auth.signOut();
+            if (mounted) {
+              setIsAuthenticated(false);
+              setLoading(false);
+            }
             navigate('/login');
             return;
           }
         }
 
-        setIsAuthenticated(true);
+        if (mounted) {
+          setIsAuthenticated(true);
+          setLoading(false);
+        }
       } catch (err) {
         console.error('Session check failed:', err);
-        setIsAuthenticated(false);
+        if (mounted) {
+          setIsAuthenticated(false);
+          setLoading(false);
+        }
         navigate('/login');
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -77,16 +91,32 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Enhanced auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT' || event === 'USER_DELETED' || (event === 'TOKEN_REFRESHED' && !session)) {
-        setIsAuthenticated(false);
+      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        if (mounted) {
+          setIsAuthenticated(false);
+        }
         navigate('/login');
-        await supabase.auth.signOut();
-      } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-        setIsAuthenticated(true);
+      } else if (event === 'TOKEN_REFRESHED') {
+        if (!session) {
+          await supabase.auth.signOut();
+          if (mounted) {
+            setIsAuthenticated(false);
+          }
+          navigate('/login');
+        } else {
+          if (mounted) {
+            setIsAuthenticated(true);
+          }
+        }
+      } else if (event === 'SIGNED_IN' && session) {
+        if (mounted) {
+          setIsAuthenticated(true);
+        }
       }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate]);
