@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DollarSign, TrendingUp, BarChart2, Search, Filter, Download, RefreshCw } from 'lucide-react';
+import PriceExport from '../components/price-analysis/PriceExport';
 
 const PriceAnalysis: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -80,10 +81,6 @@ const PriceAnalysis: React.FC = () => {
             </div>
 
             <div className="flex gap-2">
-              <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-                <Download size={16} />
-                Export
-              </button>
               <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2">
                 <RefreshCw size={16} />
                 Update Analysis
@@ -135,9 +132,7 @@ const PriceAnalysis: React.FC = () => {
         </div>
 
         <div className="p-4">
-          <div className="h-96 flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-gray-500">Price trend visualization will be displayed here</p>
-          </div>
+          <PriceExport />
         </div>
       </div>
 
