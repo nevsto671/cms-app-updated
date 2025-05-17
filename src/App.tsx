@@ -22,6 +22,14 @@ import PriceAnalysis from './pages/PriceAnalysis';
 import { supabase } from './lib/supabase';
 import './App.css';
 
+interface AuthSubscription {
+  data: {
+    subscription: {
+      unsubscribe: () => void;
+    };
+  };
+}
+
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -30,7 +38,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    let authListener: { data: { subscription: { unsubscribe: () => void } } } | null = null;
+    let authListener: AuthSubscription | null = null;
 
     const initializeAuth = async () => {
       try {
@@ -74,23 +82,27 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     // Set up auth state listener
-    authListener = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
+    const setupAuthListener = async () => {
+      const { data } = await supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!mounted) return;
 
-      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-        setIsAuthenticated(false);
-        navigate('/login');
-      } else if (event === 'SIGNED_IN' && session) {
-        setIsAuthenticated(true);
-      }
-    });
+        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+          setIsAuthenticated(false);
+          navigate('/login');
+        } else if (event === 'SIGNED_IN' && session) {
+          setIsAuthenticated(true);
+        }
+      });
+
+      authListener = data as AuthSubscription;
+    };
+
+    setupAuthListener();
 
     return () => {
       mounted = false;
-      // Safely unsubscribe only if authListener and its subscription exist
-      if (authListener?.data?.subscription?.unsubscribe) {
-        authListener.data.subscription.unsubscribe();
-      }
+      // Safely unsubscribe using optional chaining
+      authListener?.data?.subscription?.unsubscribe?.();
     };
   }, [navigate]);
 
