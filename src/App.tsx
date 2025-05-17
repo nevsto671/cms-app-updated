@@ -30,7 +30,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    let authListener: any = null;
+    let authListener: { data: { subscription: { unsubscribe: () => void } } } | null = null;
 
     const initializeAuth = async () => {
       try {
@@ -87,8 +87,9 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
-      if (authListener) {
-        authListener.subscription.unsubscribe();
+      // Safely unsubscribe only if authListener and its subscription exist
+      if (authListener?.data?.subscription?.unsubscribe) {
+        authListener.data.subscription.unsubscribe();
       }
     };
   }, [navigate]);
