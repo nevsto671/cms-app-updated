@@ -87,6 +87,17 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
       'proposed_price'
     ];
 
+    const numericFields = [
+      'units_sold_qty',
+      'total_comm_and_proposed_sales',
+      'commercial_price_list',
+      'mfc_price',
+      'tc_price',
+      'tc_total_sales',
+      'proposed_total_sales',
+      'proposed_price'
+    ];
+
     // Check required fields
     for (const field of requiredFields) {
       if (!row[field]) {
@@ -95,7 +106,7 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     }
 
     // Validate numeric fields
-    for (const field of requiredFields) {
+    for (const field of numericFields) {
       if (row[field] && isNaN(parseFloat(row[field]))) {
         throw new Error(`Invalid numeric value for ${field}`);
       }
