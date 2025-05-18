@@ -35,11 +35,11 @@ const AnalysisDashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Overview Card */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Proposed Offer Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="bg-white">
+        <h2 className="text-xl font-semibold text-gray-900 p-4 border-b border-gray-200">Proposed Offer Overview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
           <div>
             <div className="mb-4">
               <div className="text-sm text-gray-600">Total Comm. & Proposed Sales</div>
@@ -120,10 +120,10 @@ const AnalysisDashboard: React.FC = () => {
       </div>
 
       {/* Manufacturers Summary */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Manufacturers Summary</h2>
+      <div className="bg-white mt-4">
+        <h2 className="text-xl font-semibold text-gray-900 p-4 border-b border-gray-200">Manufacturers Summary</h2>
         
-        <div className="h-[400px] mb-6">
+        <div className="h-[400px] p-4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={manufacturersData}>
               <CartesianGrid strokeDasharray="3 3" />
