@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Filter, Download, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
+import { Search, Filter, Download, ArrowUp, ArrowDown, RefreshCw, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { PriceAnalysis } from '../../types/catalog';
 import Papa from 'papaparse';
@@ -13,6 +13,7 @@ const RawDataTable: React.FC = () => {
   const [selectedField, setSelectedField] = useState<keyof PriceAnalysis>('sin');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [showFilters, setShowFilters] = useState(false);
+  const [showOnlyMfcNo, setShowOnlyMfcNo] = useState(false);
   
   const tableWrapperRef = useRef<HTMLDivElement>(null);
   const headerScrollRef = useRef<HTMLDivElement>(null);
@@ -72,9 +73,17 @@ const RawDataTable: React.FC = () => {
   ];
 
   const filterData = (items: PriceAnalysis[]) => {
-    if (!searchTerm) return items;
+    let filtered = items;
 
-    return items.filter(item => {
+    // First apply MFC filter if enabled
+    if (showOnlyMfcNo) {
+      filtered = filtered.filter(item => item.is_proposed_price_lte_mfc === 'NO');
+    }
+
+    // Then apply search filter
+    if (!searchTerm) return filtered;
+
+    return filtered.filter(item => {
       const searchValue = searchTerm.toLowerCase();
 
       if (searchField === 'all') {
@@ -164,6 +173,24 @@ const RawDataTable: React.FC = () => {
           </select>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => setShowOnlyMfcNo(!showOnlyMfcNo)}
+            className={`px-4 py-2 rounded-lg border ${
+              showOnlyMfcNo 
+                ? 'bg-red-50 text-red-600 border-red-200' 
+                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle size={16} />
+              {showOnlyMfcNo ? 'Show All' : 'Show MFC Issues'}
+              {showOnlyMfcNo && (
+                <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
+                  {filterData(data).length}
+                </span>
+              )}
+            </div>
+          </button>
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`p-2 border border-gray-200 rounded-lg hover:bg-gray-50 ${
