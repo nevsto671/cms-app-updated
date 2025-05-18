@@ -148,7 +148,7 @@ const RawDataTable: React.FC = () => {
         'TC Total Sales': formatCurrency(item.tc_total_sales),
         'Proposed Total Sales': formatCurrency(item.proposed_total_sales),
         'Proposed Price': formatCurrency(item.proposed_price),
-        'Propose Discount': formatPercentage(item.proposed_discount),
+        'Proposed Discount': formatPercentage(item.proposed_discount),
         'Unfavorable Pricing': item.is_proposed_price_lte_mfc === 'NO' ? 'Yes' : 'No',
         'Tracking Ratio': item.tracking_ratio?.toFixed(2) || '-'
       }));
