@@ -13,16 +13,12 @@ interface ImportStatus {
   startTime?: number;
 }
 
-interface ImportDataProps {
-  onComplete: () => void;
-}
-
-const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
+const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<ImportStatus | null>(null);
-  const [itemCount, setItemCount] = useState<number | null>(null);
+  const [totalRows, setTotalRows] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [cancelImport, setCancelImport] = useState(false);
@@ -39,30 +35,26 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     };
   }, []);
 
-  // Count items in CSV when file is selected
+  // Count rows when file is selected
   useEffect(() => {
     if (file) {
-      countItemsInFile();
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          Papa.parse(e.target.result as string, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+              setTotalRows(results.data.length);
+            }
+          });
+        }
+      };
+      reader.readAsText(file);
     } else {
-      setItemCount(null);
+      setTotalRows(0);
     }
   }, [file]);
-
-  const countItemsInFile = () => {
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        const content = e.target.result as string;
-        // Count lines, excluding empty lines and header
-        const lines = content.split('\n').filter(line => line.trim().length > 0);
-        const count = Math.max(0, lines.length - 1); // Subtract 1 for header
-        setItemCount(count);
-      }
-    };
-    reader.readAsText(file);
-  };
 
   const calculateTimeRemaining = (processed: number, total: number, startTime: number): string => {
     const elapsedTime = Date.now() - startTime;
@@ -466,9 +458,9 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
               </button>
             </div>
             
-            {itemCount !== null && (
+            {totalRows > 0 && (
               <div className="text-sm text-gray-600">
-                File contains {itemCount.toLocaleString()} items
+                File contains {totalRows.toLocaleString()} items
               </div>
             )}
             
