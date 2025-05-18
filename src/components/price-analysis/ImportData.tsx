@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, X, AlertCircle, Download } from 'lucide-react';
 import Papa from 'papaparse';
 import { supabase } from '../../lib/supabase';
+import { calculateTotalCommercialSales, calculateDiscountPercentage } from '../../utils/calculations';
 
 interface ImportStatus {
   total: number;
@@ -26,7 +27,6 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     'mfr_number',
     'units_sold_qty',
     'total_comm_and_proposed_sales',
-    'total_commercial_sales',
     'commercial_price_list',
     'mfc_price',
     'mfc_discount',
@@ -35,7 +35,6 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     'tc_total_sales',
     'proposed_price',
     'proposed_discount',
-    'is_proposed_price_lte_mfc',
     'proposed_total_sales',
     'tracking_ratio'
   ];
@@ -48,7 +47,6 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     'MFR-123',
     '100',
     '150000.00',
-    '120000.00',
     '1500.00',
     '1200.00',
     '20.00',
@@ -57,7 +55,6 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     '110000.00',
     '1000.00',
     '33.33',
-    'YES',
     '100000.00',
     '1.25'
   ];
@@ -117,13 +114,14 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       'sin',
       'item_number',
       'mfr_name',
-      'mfr_number'
+      'mfr_number',
+      'total_comm_and_proposed_sales',
+      'proposed_total_sales'
     ];
 
     const numericFields = [
       'units_sold_qty',
       'total_comm_and_proposed_sales',
-      'total_commercial_sales',
       'commercial_price_list',
       'mfc_price',
       'mfc_discount',
@@ -159,9 +157,15 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       }
     }
 
-    // Validate is_proposed_price_lte_mfc
-    if (row.is_proposed_price_lte_mfc && !['YES', 'NO'].includes(row.is_proposed_price_lte_mfc)) {
-      throw new Error('is_proposed_price_lte_mfc must be either YES or NO');
+    // Calculate total commercial sales
+    row.total_commercial_sales = calculateTotalCommercialSales(
+      row.total_comm_and_proposed_sales,
+      row.proposed_total_sales
+    );
+
+    // Validate the calculated value
+    if (row.total_commercial_sales < 0) {
+      throw new Error('Total commercial sales cannot be negative');
     }
 
     return true;
@@ -217,35 +221,40 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     setError(null);
     setStatus(null);
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        if (results.errors.length > 0) {
-          setError(`CSV parsing error: ${results.errors[0].message}`);
-          setImporting(false);
-          return;
-        }
-
-        try {
-          const finalStatus = await processImport(results.data);
-          
-          if (finalStatus.successful > 0) {
-            setTimeout(() => {
-              onComplete();
-            }, 2000);
+    try {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+          if (results.errors.length > 0) {
+            setError(`CSV parsing error: ${results.errors[0].message}`);
+            setImporting(false);
+            return;
           }
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to import data');
-        } finally {
+
+          try {
+            const finalStatus = await processImport(results.data);
+            
+            if (finalStatus.successful > 0) {
+              setTimeout(() => {
+                onComplete();
+              }, 2000);
+            }
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to import data');
+          } finally {
+            setImporting(false);
+          }
+        },
+        error: (error) => {
+          setError(`Failed to parse CSV file: ${error.message}`);
           setImporting(false);
         }
-      },
-      error: (error) => {
-        setError(`Failed to parse CSV file: ${error.message}`);
-        setImporting(false);
-      }
-    });
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import data');
+      setImporting(false);
+    }
   };
 
   return (
