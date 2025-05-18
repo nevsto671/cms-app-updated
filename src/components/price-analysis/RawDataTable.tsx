@@ -302,6 +302,12 @@ const RawDataTable: React.FC = () => {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                SIN
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                Item #
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 Description
               </th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
@@ -357,6 +363,8 @@ const RawDataTable: React.FC = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredData.map((item) => (
               <tr key={item.itemNumber} className="hover:bg-gray-50">
+                <td className="px-3 py-4 text-sm text-gray-900">{item.sin}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{item.itemNumber}</td>
                 <td className="px-3 py-4 text-sm text-gray-900">{item.description}</td>
                 <td className="px-3 py-4 text-sm text-gray-900">{item.mfrName}</td>
                 <td className="px-3 py-4 text-sm font-mono text-gray-900">{item.mfrNumber}</td>
