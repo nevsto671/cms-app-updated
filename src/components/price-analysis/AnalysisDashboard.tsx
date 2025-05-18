@@ -1,5 +1,4 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const AnalysisDashboard: React.FC = () => {
   // Mock data - replace with real data from your API/database
@@ -122,27 +121,6 @@ const AnalysisDashboard: React.FC = () => {
       {/* Manufacturers Summary */}
       <div className="bg-white mt-4">
         <h2 className="text-xl font-semibold text-gray-900 p-4 border-b border-gray-200">Manufacturers Summary</h2>
-        
-        <div className="h-[400px] p-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={manufacturersData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip 
-                formatter={(value: number) => [value, 'Items']}
-                labelStyle={{ color: '#111827' }}
-                contentStyle={{ 
-                  backgroundColor: 'white',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '0.5rem'
-                }}
-              />
-              <Bar dataKey="items" fill="#818CF8" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
