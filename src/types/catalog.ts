@@ -1,27 +1,41 @@
-// Add PriceAnalysis interface
 export interface PriceAnalysis {
   id: string;
   sin: string;
-  itemNumber: string;
+  item_number: string;
   description: string;
-  mfrName: string;
-  mfrNumber: string;
-  unitsSoldQty: number;
-  totalCommAndProposedSales: number;
-  totalCommercialSales: number;
-  commercialPriceList: number;
-  mfcPrice: number;
+  mfr_name: string;
+  mfr_number: string;
+  units_sold_qty: number;
+  total_comm_and_proposed_sales: number;
+  total_commercial_sales: number;
+  commercial_price_list: number;
+  mfc_price: number;
+  mfc_discount: number;
+  tc_price: number | null;
+  tc_discount: number | null;
+  tc_total_sales: number | null;
+  proposed_price: number;
+  proposed_discount: number;
+  proposed_total_sales: number | null;
+  is_proposed_price_lte_mfc: 'YES' | 'NO' | null;
+  tracking_ratio: number;
+  created_at: Date;
+  updated_at: Date;
+  created_by: string | null;
+  upload_batch_id: string | null;
+}
+
+export interface ManufacturerAnalysis {
+  name: string;
+  totalItems: number;
+  totalSales: number;
+  averageDiscount: number;
+  zeroSalesItems: number;
+}
+
+export interface DiscountAnalysis {
   mfcDiscount: number;
-  tcPrice: number | null;
-  tcDiscount: number | null;
-  tcTotalSales: number | null;
-  proposedPrice: number;
+  tcDiscount: number;
   proposedDiscount: number;
-  isProposedPriceLteMfc: 'YES' | 'NO' | null;
-  proposedTotalSales: number | null;
-  trackingRatio: number;
-  createdDate: Date;
-  updatedDate: Date;
-  uploadBatchId: string | null;
-  createdBy: string | null;
+  isProposedLowerThanMfc: boolean;
 }
