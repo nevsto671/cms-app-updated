@@ -10,7 +10,11 @@ interface ImportStatus {
   failed: number;
 }
 
-const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+interface ImportDataProps {
+  onComplete: () => void;
+}
+
+const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +30,6 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     'mfr_number',
     'units_sold_qty',
     'total_comm_and_proposed_sales',
-    'total_commercial_sales',
     'commercial_price_list',
     'mfc_price',
     'mfc_discount',
@@ -48,7 +51,6 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     'MFR-123',
     '100',
     '150000.00',
-    '120000.00',
     '1500.00',
     '1200.00',
     '20.00',
@@ -123,7 +125,6 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     const numericFields = [
       'units_sold_qty',
       'total_comm_and_proposed_sales',
-      'total_commercial_sales',
       'commercial_price_list',
       'mfc_price',
       'mfc_discount',
@@ -155,7 +156,6 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   };
 
   const processImport = async (data: any[]) => {
-    const batchId = new Date().getTime().toString();
     const status: ImportStatus = {
       total: data.length,
       processed: 0,
@@ -170,18 +170,34 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         const { error: insertError } = await supabase
           .from('price_analysis')
           .insert([{
-            ...row,
-            upload_batch_id: batchId
+            sin: row.sin,
+            item_number: row.item_number,
+            description: row.description,
+            mfr_name: row.mfr_name,
+            mfr_number: row.mfr_number,
+            units_sold_qty: parseInt(row.units_sold_qty),
+            total_comm_and_proposed_sales: parseFloat(row.total_comm_and_proposed_sales),
+            commercial_price_list: parseFloat(row.commercial_price_list),
+            mfc_price: parseFloat(row.mfc_price),
+            mfc_discount: parseFloat(row.mfc_discount),
+            tc_price: row.tc_price ? parseFloat(row.tc_price) : null,
+            tc_discount: row.tc_discount ? parseFloat(row.tc_discount) : null,
+            tc_total_sales: row.tc_total_sales ? parseFloat(row.tc_total_sales) : null,
+            proposed_price: parseFloat(row.proposed_price),
+            proposed_discount: parseFloat(row.proposed_discount),
+            is_proposed_price_lte_mfc: row.is_proposed_price_lte_mfc,
+            proposed_total_sales: row.proposed_total_sales ? parseFloat(row.proposed_total_sales) : null,
+            tracking_ratio: parseFloat(row.tracking_ratio),
+            upload_batch_id: new Date().getTime().toString()
           }]);
 
         if (insertError) throw insertError;
-
         status.successful++;
       } catch (err) {
         console.error('Import error:', err);
         status.failed++;
       }
-
+      
       status.processed++;
       setStatus({ ...status });
     }
@@ -196,17 +212,17 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     setError(null);
     setStatus(null);
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        if (results.errors.length > 0) {
-          setError(`CSV parsing error: ${results.errors[0].message}`);
-          setImporting(false);
-          return;
-        }
+    try {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+          if (results.errors.length > 0) {
+            setError(`CSV parsing error: ${results.errors[0].message}`);
+            setImporting(false);
+            return;
+          }
 
-        try {
           const finalStatus = await processImport(results.data);
           
           if (finalStatus.successful > 0) {
@@ -214,17 +230,16 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
               onComplete();
             }, 2000);
           }
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to import data');
-        } finally {
+        },
+        error: (error) => {
+          setError(`Failed to parse CSV file: ${error.message}`);
           setImporting(false);
         }
-      },
-      error: (error) => {
-        setError(`Failed to parse CSV file: ${error.message}`);
-        setImporting(false);
-      }
-    });
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import data');
+      setImporting(false);
+    }
   };
 
   return (
