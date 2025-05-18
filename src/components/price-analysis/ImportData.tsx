@@ -33,8 +33,8 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     'mfc_price',
     'tc_price',
     'tc_total_sales',
-    'proposed_price',
-    'proposed_total_sales'
+    'proposed_total_sales',
+    'proposed_price'
   ];
 
   const CSV_EXAMPLE = [
@@ -49,8 +49,8 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     '1200.00',
     '1100.00',
     '110000.00',
-    '1000.00',
-    '100000.00'
+    '100000.00',
+    '1000.00'
   ];
 
   const downloadTemplate = () => {
@@ -74,19 +74,17 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     const requiredFields = [
       'sin',
       'item_number',
+      'description',
       'mfr_name',
-      'mfr_number'
-    ];
-
-    const numericFields = [
+      'mfr_number',
       'units_sold_qty',
       'total_comm_and_proposed_sales',
       'commercial_price_list',
       'mfc_price',
       'tc_price',
       'tc_total_sales',
-      'proposed_price',
-      'proposed_total_sales'
+      'proposed_total_sales',
+      'proposed_price'
     ];
 
     // Check required fields
@@ -97,7 +95,7 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     }
 
     // Validate numeric fields
-    for (const field of numericFields) {
+    for (const field of requiredFields) {
       if (row[field] && isNaN(parseFloat(row[field]))) {
         throw new Error(`Invalid numeric value for ${field}`);
       }
@@ -132,8 +130,8 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
             mfc_price: parseFloat(row.mfc_price),
             tc_price: row.tc_price ? parseFloat(row.tc_price) : null,
             tc_total_sales: row.tc_total_sales ? parseFloat(row.tc_total_sales) : null,
-            proposed_price: parseFloat(row.proposed_price),
             proposed_total_sales: row.proposed_total_sales ? parseFloat(row.proposed_total_sales) : null,
+            proposed_price: parseFloat(row.proposed_price),
             upload_batch_id: new Date().getTime().toString()
           }]);
 
