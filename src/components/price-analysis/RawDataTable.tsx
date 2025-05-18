@@ -32,14 +32,8 @@ const RawDataTable: React.FC = () => {
     }
   };
 
-  // Fetch data on mount and set up refresh interval
   useEffect(() => {
     fetchData();
-    
-    // Refresh data every 30 seconds
-    const interval = setInterval(fetchData, 30000);
-    
-    return () => clearInterval(interval);
   }, []);
 
   const formatCurrency = (value: number | null | undefined): string => {
@@ -68,24 +62,24 @@ const RawDataTable: React.FC = () => {
   const handleExport = () => {
     const exportData = data.map(item => ({
       'SIN': item.sin,
-      'Item Number': item.itemNumber,
+      'Item Number': item.item_number,
       'Description': item.description,
-      'Manufacturer Name': item.mfrName,
-      'Manufacturer Number': item.mfrNumber,
-      'Units Sold': item.unitsSoldQty,
-      'Total Comm. & Proposed Sales': item.totalCommAndProposedSales,
-      'Total Commercial Sales': item.totalCommAndProposedSales - (item.proposedTotalSales || 0),
-      'Commercial Price List': item.commercialPriceList,
-      'MFC Price': item.mfcPrice,
-      'MFC Discount': item.mfcDiscount,
-      'TC Price': item.tcPrice,
-      'TC Discount': item.tcDiscount,
-      'TC Total Sales': item.tcTotalSales,
-      'Proposed Total Sales': item.proposedTotalSales,
-      'Proposed Price': item.proposedPrice,
-      'Proposed Discount': item.proposedDiscount,
-      '≤ MFC': item.isProposedPriceLteMfc,
-      'Tracking Ratio': item.trackingRatio
+      'Manufacturer Name': item.mfr_name,
+      'Manufacturer Number': item.mfr_number,
+      'Units Sold': item.units_sold_qty,
+      'Total Comm. & Proposed Sales': formatCurrency(item.total_comm_and_proposed_sales),
+      'Total Commercial Sales': formatCurrency(item.total_commercial_sales),
+      'Commercial Price List': formatCurrency(item.commercial_price_list),
+      'MFC Price': formatCurrency(item.mfc_price),
+      'MFC Discount': formatPercent(item.mfc_discount),
+      'TC Price': formatCurrency(item.tc_price),
+      'TC Discount': formatPercent(item.tc_discount),
+      'TC Total Sales': formatCurrency(item.tc_total_sales),
+      'Proposed Price': formatCurrency(item.proposed_price),
+      'Proposed Discount': formatPercent(item.proposed_discount),
+      'Proposed Total Sales': formatCurrency(item.proposed_total_sales),
+      '≤ MFC': item.is_proposed_price_lte_mfc,
+      'Tracking Ratio': item.tracking_ratio?.toFixed(2) || '-'
     }));
 
     const csv = Papa.unparse(exportData);
@@ -156,63 +150,25 @@ const RawDataTable: React.FC = () => {
         <table className="min-w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                SIN
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Item #
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Description
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Mfr Name
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Mfr Number
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Units Sold
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Total Comm. & Proposed Sales
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Total Commercial Sales
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Commercial Price List
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                MFC Price
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                MFC Discount
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                TC Price
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                TC Discount
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                TC Total Sales
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Proposed Total Sales
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Proposed Price
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Proposed Discount
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                ≤ MFC
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tracking Ratio
-              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SIN</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item #</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mfr Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mfr Number</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Units Sold</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Comm. & Proposed Sales</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Commercial Sales</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commercial Price List</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MFC Price</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MFC Discount</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TC Price</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TC Discount</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TC Total Sales</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposed Price</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposed Discount</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposed Total Sales</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">≤ MFC</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tracking Ratio</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -235,26 +191,24 @@ const RawDataTable: React.FC = () => {
               data.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.sin}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.itemNumber}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.item_number}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.description}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.mfrName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.mfrNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.unitsSoldQty}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.totalCommAndProposedSales)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(item.totalCommAndProposedSales - (item.proposedTotalSales || 0))}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.commercialPriceList)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.mfcPrice)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercent(item.mfcDiscount)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.tcPrice)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercent(item.tcDiscount)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.tcTotalSales)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.proposedTotalSales)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.proposedPrice)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercent(item.proposedDiscount)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.isProposedPriceLteMfc}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.trackingRatio?.toFixed(2) || '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.mfr_name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.mfr_number}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.units_sold_qty}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.total_comm_and_proposed_sales)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.total_commercial_sales)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.commercial_price_list)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.mfc_price)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercent(item.mfc_discount)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.tc_price)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercent(item.tc_discount)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.tc_total_sales)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.proposed_price)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercent(item.proposed_discount)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.proposed_total_sales)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.is_proposed_price_lte_mfc}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.tracking_ratio?.toFixed(2) || '-'}</td>
                 </tr>
               ))
             )}
