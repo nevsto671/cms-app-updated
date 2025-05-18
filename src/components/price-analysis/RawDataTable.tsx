@@ -1,72 +1,76 @@
 import React, { useState, useRef } from 'react';
 import { Search, Filter, Download, ArrowUp, ArrowDown, Upload, X } from 'lucide-react';
 import Papa from 'papaparse';
+import { PriceAnalysis } from '../../types/catalog';
 
-interface PriceData {
-  sin: string;
-  itemNo: string;
-  description: string;
-  mfrName: string;
-  mfrItemNo: string;
-  soldUnits: number;
-  totalCommSales: number;
-  proposedSales: number;
-  commercialPrice: number;
-  mfcPrice: number;
-  mfcDiscount: number;
-  proposedPrice: number;
-  proposedDiscount: number;
-  trackingRatio: number;
-}
-
-const mockData: PriceData[] = [
+const mockData: PriceAnalysis[] = [
   {
+    id: '1',
     sin: 'L39',
-    itemNo: 'IT-001',
+    itemNumber: 'IT-001',
     description: 'High-performance laptop with Intel Core i7, 16GB RAM, 512GB SSD',
     mfrName: 'Dell Technologies',
-    mfrItemNo: 'LAT-5420-i7-16-512',
-    soldUnits: 150,
-    totalCommSales: 1008300,
-    proposedSales: 615000,
-    commercialPrice: 6722.00,
+    mfrNumber: 'LAT-5420-i7-16-512',
+    unitsSoldQty: 150,
+    totalCommAndProposedSales: 1008300,
+    totalCommercialSales: 393300,
+    commercialPriceList: 6722.00,
     mfcPrice: 4100.00,
     mfcDiscount: 39.01,
+    tcPrice: 4500.00,
+    tcDiscount: 33.05,
+    tcTotalSales: 675000,
     proposedPrice: 4100.00,
     proposedDiscount: 39.01,
-    trackingRatio: 4.35
+    isProposedPriceLteMfc: 'YES',
+    proposedTotalSales: 615000,
+    trackingRatio: 1.64,
+    createdDate: new Date('2025-03-15'),
+    updatedDate: new Date('2025-03-15'),
+    uploadBatchId: 'BATCH001',
+    createdBy: 'system'
   },
   {
+    id: '2',
     sin: 'L40',
-    itemNo: 'IT-002',
+    itemNumber: 'IT-002',
     description: 'Professional workstation with dual monitors and docking station',
     mfrName: 'HP Inc.',
-    mfrItemNo: 'WS-8560-DUAL',
-    soldUnits: 75,
-    totalCommSales: 534075,
-    proposedSales: 424275,
-    commercialPrice: 7121.00,
+    mfrNumber: 'WS-8560-DUAL',
+    unitsSoldQty: 75,
+    totalCommAndProposedSales: 534075,
+    totalCommercialSales: 109800,
+    commercialPriceList: 7121.00,
     mfcPrice: 5911.00,
     mfcDiscount: 16.99,
+    tcPrice: 6000.00,
+    tcDiscount: 15.74,
+    tcTotalSales: 450000,
     proposedPrice: 5657.00,
     proposedDiscount: 20.56,
-    trackingRatio: 3.15
+    isProposedPriceLteMfc: 'NO',
+    proposedTotalSales: 424275,
+    trackingRatio: 1.26,
+    createdDate: new Date('2025-03-15'),
+    updatedDate: new Date('2025-03-15'),
+    uploadBatchId: 'BATCH001',
+    createdBy: 'system'
   }
 ];
 
 const RawDataTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<keyof PriceData>('description');
+  const [sortField, setSortField] = useState<keyof PriceAnalysis>('description');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSIN, setSelectedSIN] = useState('All');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
-  const [data, setData] = useState<PriceData[]>(mockData);
+  const [data, setData] = useState<PriceAnalysis[]>(mockData);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSort = (field: keyof PriceData) => {
+  const handleSort = (field: keyof PriceAnalysis) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -117,15 +121,21 @@ const RawDataTable: React.FC = () => {
       complete: (results) => {
         const parsedData = results.data.map((row: any) => ({
           ...row,
-          soldUnits: parseInt(row.soldUnits || '0'),
-          totalCommSales: parseFloat(row.totalCommSales || '0'),
-          proposedSales: parseFloat(row.proposedSales || '0'),
-          commercialPrice: parseFloat(row.commercialPrice || '0'),
+          unitsSoldQty: parseInt(row.unitsSoldQty || '0'),
+          totalCommAndProposedSales: parseFloat(row.totalCommAndProposedSales || '0'),
+          totalCommercialSales: parseFloat(row.totalCommercialSales || '0'),
+          commercialPriceList: parseFloat(row.commercialPriceList || '0'),
           mfcPrice: parseFloat(row.mfcPrice || '0'),
           mfcDiscount: parseFloat(row.mfcDiscount || '0'),
+          tcPrice: parseFloat(row.tcPrice || '0'),
+          tcDiscount: parseFloat(row.tcDiscount || '0'),
+          tcTotalSales: parseFloat(row.tcTotalSales || '0'),
           proposedPrice: parseFloat(row.proposedPrice || '0'),
           proposedDiscount: parseFloat(row.proposedDiscount || '0'),
-          trackingRatio: parseFloat(row.trackingRatio || '0')
+          proposedTotalSales: parseFloat(row.proposedTotalSales || '0'),
+          trackingRatio: parseFloat(row.trackingRatio || '0'),
+          createdDate: new Date(row.createdDate),
+          updatedDate: new Date(row.updatedDate)
         }));
         setData(parsedData);
         setShowUploadModal(false);
@@ -135,17 +145,25 @@ const RawDataTable: React.FC = () => {
 
   const downloadTemplate = () => {
     const templateData = [{
+      id: 'EXAMPLE-001',
+      sin: 'L39',
+      itemNumber: 'IT-XXX',
       description: 'Example Product',
       mfrName: 'Example Manufacturer',
-      mfrItemNo: 'MFR-123',
-      soldUnits: '100',
-      totalCommSales: '50000',
-      proposedSales: '45000',
-      commercialPrice: '500.00',
+      mfrNumber: 'MFR-123',
+      unitsSoldQty: '100',
+      totalCommAndProposedSales: '50000',
+      totalCommercialSales: '25000',
+      commercialPriceList: '500.00',
       mfcPrice: '400.00',
       mfcDiscount: '20.00',
-      proposedPrice: '450.00',
-      proposedDiscount: '10.00',
+      tcPrice: '450.00',
+      tcDiscount: '10.00',
+      tcTotalSales: '45000',
+      proposedPrice: '425.00',
+      proposedDiscount: '15.00',
+      isProposedPriceLteMfc: 'YES',
+      proposedTotalSales: '42500',
       trackingRatio: '1.25'
     }];
 
@@ -167,13 +185,13 @@ const RawDataTable: React.FC = () => {
       const matchesSearch = 
         item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.mfrName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.mfrItemNo.toLowerCase().includes(searchTerm.toLowerCase());
+        item.mfrNumber.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesSIN = selectedSIN === 'All' || item.sin === selectedSIN;
       
       const matchesPriceRange = 
-        (!priceRange.min || item.commercialPrice >= Number(priceRange.min)) &&
-        (!priceRange.max || item.commercialPrice <= Number(priceRange.max));
+        (!priceRange.min || item.commercialPriceList >= Number(priceRange.min)) &&
+        (!priceRange.max || item.commercialPriceList <= Number(priceRange.max));
 
       return matchesSearch && matchesSIN && matchesPriceRange;
     })
@@ -275,78 +293,62 @@ const RawDataTable: React.FC = () => {
         <table className="min-w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th
-                onClick={() => handleSort('description')}
-                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              >
-                <div className="flex items-center gap-1">
-                  Description
-                  {sortField === 'description' && (
-                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                  )}
-                </div>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                Description
               </th>
-              <th
-                onClick={() => handleSort('mfrName')}
-                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              >
-                <div className="flex items-center gap-1">
-                  Mfr. Name
-                  {sortField === 'mfrName' && (
-                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                  )}
-                </div>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Mfr. Name
               </th>
-              <th
-                onClick={() => handleSort('mfrItemNo')}
-                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              >
-                <div className="flex items-center gap-1">
-                  Mfr. Item #
-                  {sortField === 'mfrItemNo' && (
-                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                  )}
-                </div>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Mfr. Item #
               </th>
-              <th
-                onClick={() => handleSort('soldUnits')}
-                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              >
-                <div className="flex items-center gap-1">
-                  Sold Units
-                  {sortField === 'soldUnits' && (
-                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                  )}
-                </div>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Sold Units
               </th>
-              <th
-                onClick={() => handleSort('totalCommSales')}
-                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              >
-                <div className="flex items-center gap-1">
-                  Total Comm. Sales
-                  {sortField === 'totalCommSales' && (
-                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                  )}
-                </div>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total Comm. & Proposed Sales
               </th>
-              <th
-                onClick={() => handleSort('proposedSales')}
-                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              >
-                <div className="flex items-center gap-1">
-                  Proposed Sales
-                  {sortField === 'proposedSales' && (
-                    sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                  )}
-                </div>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total Commercial Sales
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Commercial Price List
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                MFC Price
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                MFC Discount
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                TC Price
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                TC Discount
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                TC Total Sales
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Proposed Price
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Proposed Discount
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Proposed Total Sales
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tracking Ratio
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredData.map((item) => (
-              <tr key={item.itemNo} className="hover:bg-gray-50">
+              <tr key={item.id} className="hover:bg-gray-50">
                 <td className="px-3 py-4">
                   <div className="text-sm text-gray-900">{item.description}</div>
                 </td>
@@ -354,16 +356,46 @@ const RawDataTable: React.FC = () => {
                   <div className="text-sm text-gray-900">{item.mfrName}</div>
                 </td>
                 <td className="px-3 py-4">
-                  <div className="text-sm font-mono text-gray-900">{item.mfrItemNo}</div>
+                  <div className="text-sm font-mono text-gray-900">{item.mfrNumber}</div>
                 </td>
                 <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{item.soldUnits.toLocaleString()}</div>
+                  <div className="text-sm text-gray-900">{item.unitsSoldQty.toLocaleString()}</div>
                 </td>
                 <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{formatCurrency(item.totalCommSales)}</div>
+                  <div className="text-sm text-gray-900">{formatCurrency(item.totalCommAndProposedSales)}</div>
                 </td>
                 <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{formatCurrency(item.proposedSales)}</div>
+                  <div className="text-sm text-gray-900">{formatCurrency(item.totalCommercialSales)}</div>
+                </td>
+                <td className="px-3 py-4">
+                  <div className="text-sm text-gray-900">{formatCurrency(item.commercialPriceList)}</div>
+                </td>
+                <td className="px-3 py-4">
+                  <div className="text-sm text-gray-900">{formatCurrency(item.mfcPrice)}</div>
+                </td>
+                <td className="px-3 py-4">
+                  <div className="text-sm text-gray-900">{item.mfcDiscount.toFixed(2)}%</div>
+                </td>
+                <td className="px-3 py-4">
+                  <div className="text-sm text-gray-900">{item.tcPrice ? formatCurrency(item.tcPrice) : '-'}</div>
+                </td>
+                <td className="px-3 py-4">
+                  <div className="text-sm text-gray-900">{item.tcDiscount ? `${item.tcDiscount.toFixed(2)}%` : '-'}</div>
+                </td>
+                <td className="px-3 py-4">
+                  <div className="text-sm text-gray-900">{item.tcTotalSales ? formatCurrency(item.tcTotalSales) : '-'}</div>
+                </td>
+                <td className="px-3 py-4">
+                  <div className="text-sm text-gray-900">{formatCurrency(item.proposedPrice)}</div>
+                </td>
+                <td className="px-3 py-4">
+                  <div className="text-sm text-gray-900">{item.proposedDiscount.toFixed(2)}%</div>
+                </td>
+                <td className="px-3 py-4">
+                  <div className="text-sm text-gray-900">{item.proposedTotalSales ? formatCurrency(item.proposedTotalSales) : '-'}</div>
+                </td>
+                <td className="px-3 py-4">
+                  <div className="text-sm text-gray-900">{item.trackingRatio.toFixed(2)}</div>
                 </td>
                 <td className="px-3 py-4">
                   <div className="flex gap-2">
@@ -381,7 +413,6 @@ const RawDataTable: React.FC = () => {
         </table>
       </div>
 
-      {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-lg">
