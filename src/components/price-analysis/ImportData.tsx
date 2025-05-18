@@ -123,6 +123,8 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
       failed: 0
     };
 
+    const batchId = new Date().getTime().toString();
+
     for (const row of data) {
       try {
         validateRow(row);
@@ -143,10 +145,14 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
             tc_total_sales: row.tc_total_sales ? parseFloat(row.tc_total_sales) : null,
             proposed_total_sales: row.proposed_total_sales ? parseFloat(row.proposed_total_sales) : null,
             proposed_price: parseFloat(row.proposed_price),
-            upload_batch_id: new Date().getTime().toString()
+            upload_batch_id: batchId
           }]);
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Insert error:', insertError);
+          throw new Error(insertError.message);
+        }
+        
         status.successful++;
       } catch (err) {
         console.error('Import error:', err);
