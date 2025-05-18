@@ -183,7 +183,7 @@ const RawDataTable: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <AlertCircle size={16} />
-              {showOnlyMfcNo ? 'Show All' : 'Show MFC Issues'}
+              {showOnlyMfcNo ? 'Show All' : 'Show Unfavorable Pricing'}
               {showOnlyMfcNo && (
                 <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
                   {filterData(data).length}

@@ -259,8 +259,8 @@ const AnalysisDashboard: React.FC = () => {
                 <div className="mb-4">
                   <div className="text-sm text-gray-600">Proposed Price ≤ MFC Price</div>
                   <div className="text-lg font-semibold">
-                    {overviewData.proposedPriceLteMfc.true} ({((overviewData.proposedPriceLteMfc.true / overviewData.totalItems) * 100).toFixed(1)}%) True,{' '}
-                    {overviewData.proposedPriceLteMfc.false} ({((overviewData.proposedPriceLteMfc.false / overviewData.totalItems) * 100).toFixed(1)}%) False
+                    {overviewData.proposedPriceLteMfc.true} ({((overviewData.proposedPriceLteMfc.true / overviewData.totalItems) * 100).toFixed(1)}%) Favorable,{' '}
+                    {overviewData.proposedPriceLteMfc.false} ({((overviewData.proposedPriceLteMfc.false / overviewData.totalItems) * 100).toFixed(1)}%) Unfavorable
                   </div>
                 </div>
                 <div className="mb-4">
