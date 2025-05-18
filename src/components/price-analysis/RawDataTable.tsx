@@ -258,7 +258,10 @@ const RawDataTable: React.FC = () => {
                 </tr>
               ) : (
                 filteredData.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
+                  <tr 
+                    key={item.id} 
+                    className={`hover:bg-gray-50 ${item.is_proposed_price_lte_mfc === 'NO' ? 'bg-red-50' : ''}`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.sin}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.item_number}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.description}</td>
