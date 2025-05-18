@@ -7,11 +7,12 @@
  * This calculates the discount as a percentage off the commercial price list
  */
 export function calculateDiscountPercentage(commercialPriceList: number, comparisonPrice: number): number {
-  if (commercialPriceList === 0) return 0;
+  if (!commercialPriceList || !comparisonPrice || commercialPriceList === 0) return 0;
   
   const discountAmount = commercialPriceList - comparisonPrice;
   const discountPercentage = (discountAmount / commercialPriceList) * 100;
   
+  // Round to 2 decimal places
   return Number(discountPercentage.toFixed(2));
 }
 
@@ -19,6 +20,7 @@ export function calculateDiscountPercentage(commercialPriceList: number, compari
  * Calculate total commercial sales
  */
 export function calculateTotalCommercialSales(totalCommAndProposedSales: number, proposedTotalSales: number): number {
+  if (!totalCommAndProposedSales || !proposedTotalSales) return 0;
   return totalCommAndProposedSales - proposedTotalSales;
 }
 
@@ -26,7 +28,7 @@ export function calculateTotalCommercialSales(totalCommAndProposedSales: number,
  * Calculate tracking ratio
  */
 export function calculateTrackingRatio(proposedPrice: number, tcPrice: number): number {
-  if (tcPrice === 0) return 0;
+  if (!proposedPrice || !tcPrice || tcPrice === 0) return 0;
   return Number((proposedPrice / tcPrice).toFixed(2));
 }
 
@@ -54,5 +56,6 @@ export function formatPercentage(value: number | null | undefined): string {
  * Check if proposed price is less than or equal to MFC price
  */
 export function isProposedPriceLteMfc(proposedPrice: number, mfcPrice: number): 'YES' | 'NO' {
+  if (!proposedPrice || !mfcPrice) return 'NO';
   return proposedPrice <= mfcPrice ? 'YES' : 'NO';
 }

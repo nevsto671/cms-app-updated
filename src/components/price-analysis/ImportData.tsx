@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, X, AlertCircle, Download } from 'lucide-react';
 import Papa from 'papaparse';
 import { supabase } from '../../lib/supabase';
-import { calculateDiscountPercentage } from '../../utils/calculations';
+import { calculateDiscountPercentage, calculateTotalCommercialSales, isProposedPriceLteMfc } from '../../utils/calculations';
 
 interface ImportStatus {
   total: number;
@@ -29,14 +29,10 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     'total_comm_and_proposed_sales',
     'commercial_price_list',
     'mfc_price',
-    'mfc_discount',
     'tc_price',
-    'tc_discount',
     'tc_total_sales',
     'proposed_price',
-    'proposed_discount',
-    'proposed_total_sales',
-    'tracking_ratio'
+    'proposed_total_sales'
   ];
 
   const CSV_EXAMPLE = [
@@ -49,14 +45,10 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     '150000.00',
     '1500.00',
     '1200.00',
-    '20.00',
     '1100.00',
-    '26.67',
     '110000.00',
     '1000.00',
-    '33.33',
-    '100000.00',
-    '1.25'
+    '100000.00'
   ];
 
   const downloadTemplate = () => {
@@ -125,8 +117,7 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       'tc_price',
       'tc_total_sales',
       'proposed_price',
-      'proposed_total_sales',
-      'tracking_ratio'
+      'proposed_total_sales'
     ];
 
     // Check required fields
@@ -176,7 +167,7 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
 
     // Calculate total commercial sales if both values are present
     if (row.total_comm_and_proposed_sales !== undefined && row.proposed_total_sales !== undefined) {
-      row.total_commercial_sales = row.total_comm_and_proposed_sales - row.proposed_total_sales;
+      row.total_commercial_sales = calculateTotalCommercialSales(row.total_comm_and_proposed_sales, row.proposed_total_sales);
 
       // Validate the calculated value
       if (row.total_commercial_sales < 0) {
@@ -186,7 +177,7 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
 
     // Determine if proposed price is less than or equal to MFC price
     if (row.proposed_price !== undefined && row.mfc_price !== undefined) {
-      row.is_proposed_price_lte_mfc = row.proposed_price <= row.mfc_price ? 'YES' : 'NO';
+      row.is_proposed_price_lte_mfc = isProposedPriceLteMfc(row.proposed_price, row.mfc_price);
     } else {
       row.is_proposed_price_lte_mfc = 'NO'; // Default value if either price is missing
     }
