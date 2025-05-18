@@ -12,7 +12,7 @@ const ContractAdministration: React.FC = () => {
   return (
     <div className="p-6 max-w-[1400px] mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Contract Administration</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Contracting Admin</h1>
         <p className="text-gray-600">Manage and monitor contract lifecycle, compliance, and performance</p>
       </div>
 

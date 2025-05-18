@@ -110,7 +110,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
                   className="w-full flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
                 >
                   <Briefcase size={16} className="mr-2" />
-                  <span>Contract Administration</span>
+                  <span>Contracting Admin</span>
                   <span className="ml-auto">
                     {isContractOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </span>
@@ -134,6 +134,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
                   </div>
                 )}
               </div>
+
+              <NavItem 
+                icon={<FileBox size={16} />} 
+                title="DocTag Central" 
+                onClick={() => handleNavigation('/doctag-central')} 
+                active={location.pathname === '/doctag-central'} 
+                isCollapsed={isCollapsed}
+              />
 
               <button
                 onClick={() => setIsClassificationOpen(!isClassificationOpen)}
