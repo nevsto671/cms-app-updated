@@ -109,14 +109,12 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     }
   };
 
-  const validateRow = (row: any): boolean => {
+  const validateRow = (row: any, rowIndex: number): boolean => {
     const requiredFields = [
       'sin',
       'item_number',
       'mfr_name',
-      'mfr_number',
-      'total_comm_and_proposed_sales',
-      'proposed_total_sales'
+      'mfr_number'
     ];
 
     const numericFields = [
@@ -134,9 +132,16 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     // Check required fields
     for (const field of requiredFields) {
       if (!row[field]) {
-        throw new Error(`Missing required field: ${field}`);
+        throw new Error(`Row ${rowIndex + 1}: Missing required field: ${field}`);
       }
     }
+
+    // Initialize numeric fields with default values if missing
+    numericFields.forEach(field => {
+      if (!row[field]) {
+        row[field] = 0;
+      }
+    });
 
     // Validate and convert numeric fields
     for (const field of numericFields) {
@@ -146,7 +151,7 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         const numValue = parseFloat(cleanValue);
         
         if (isNaN(numValue)) {
-          throw new Error(`Invalid numeric value for ${field}: ${row[field]}`);
+          throw new Error(`Row ${rowIndex + 1}: Invalid numeric value for ${field}: ${row[field]}`);
         }
         
         // Update the row with the cleaned numeric value
@@ -154,32 +159,36 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       }
     }
 
-    // Calculate discounts based on commercial price list
-    if (row.commercial_price_list && row.mfc_price) {
-      row.mfc_discount = calculateDiscountPercentage(row.commercial_price_list, row.mfc_price);
+    // Calculate discounts based on commercial price list if all required values are present
+    if (row.commercial_price_list) {
+      if (row.mfc_price) {
+        row.mfc_discount = calculateDiscountPercentage(row.commercial_price_list, row.mfc_price);
+      }
+
+      if (row.tc_price) {
+        row.tc_discount = calculateDiscountPercentage(row.commercial_price_list, row.tc_price);
+      }
+
+      if (row.proposed_price) {
+        row.proposed_discount = calculateDiscountPercentage(row.commercial_price_list, row.proposed_price);
+      }
     }
 
-    if (row.commercial_price_list && row.tc_price) {
-      row.tc_discount = calculateDiscountPercentage(row.commercial_price_list, row.tc_price);
-    }
-
-    if (row.commercial_price_list && row.proposed_price) {
-      row.proposed_discount = calculateDiscountPercentage(row.commercial_price_list, row.proposed_price);
-    }
-
-    // Calculate total commercial sales
+    // Calculate total commercial sales if both values are present
     if (row.total_comm_and_proposed_sales !== undefined && row.proposed_total_sales !== undefined) {
       row.total_commercial_sales = row.total_comm_and_proposed_sales - row.proposed_total_sales;
-    }
 
-    // Validate the calculated value
-    if (row.total_commercial_sales < 0) {
-      throw new Error('Total commercial sales cannot be negative');
+      // Validate the calculated value
+      if (row.total_commercial_sales < 0) {
+        throw new Error(`Row ${rowIndex + 1}: Total commercial sales cannot be negative (${row.total_commercial_sales})`);
+      }
     }
 
     // Determine if proposed price is less than or equal to MFC price
     if (row.proposed_price !== undefined && row.mfc_price !== undefined) {
       row.is_proposed_price_lte_mfc = row.proposed_price <= row.mfc_price ? 'YES' : 'NO';
+    } else {
+      row.is_proposed_price_lte_mfc = 'NO'; // Default value if either price is missing
     }
 
     return true;
@@ -201,14 +210,14 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       failed: 0
     };
 
-    for (const row of data) {
+    for (let i = 0; i < data.length; i++) {
       try {
-        validateRow(row);
+        validateRow(data[i], i);
 
         const { error: insertError } = await supabase
           .from('price_analysis')
           .insert({
-            ...row,
+            ...data[i],
             upload_batch_id: batchId,
             created_by: user.id
           });
