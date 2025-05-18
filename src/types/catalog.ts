@@ -1,33 +1,27 @@
-export interface CatalogItem {
+// Add PriceAnalysis interface
+export interface PriceAnalysis {
   id: string;
   sin: string;
-  title: string;
+  itemNumber: string;
   description: string;
-  category: string;
-  item_no: string;
-  mfr_name: string;
-  mfr_item_no: string;
-  govt_price: number;
-  contract_name: string;
-  contract_no: string;
-  uom: string;
-  ai_enhanced: boolean;
-  ai_last_processed?: Date;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface CatalogCode {
-  id: string;
-  catalog_item_id: string;
-  code_type: 'NAICS' | 'PSC' | 'SIN';
-  code: string;
-  created_at: Date;
-}
-
-export interface CatalogTag {
-  id: string;
-  catalog_item_id: string;
-  tag: string;
-  created_at: Date;
+  mfrName: string;
+  mfrNumber: string;
+  unitsSoldQty: number;
+  totalCommAndProposedSales: number;
+  totalCommercialSales: number;
+  commercialPriceList: number;
+  mfcPrice: number;
+  mfcDiscount: number;
+  tcPrice: number | null;
+  tcDiscount: number | null;
+  tcTotalSales: number | null;
+  proposedPrice: number;
+  proposedDiscount: number;
+  isProposedPriceLteMfc: 'YES' | 'NO' | null;
+  proposedTotalSales: number | null;
+  trackingRatio: number;
+  createdDate: Date;
+  updatedDate: Date;
+  uploadBatchId: string | null;
+  createdBy: string | null;
 }
