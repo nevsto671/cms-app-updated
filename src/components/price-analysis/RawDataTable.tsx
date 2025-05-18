@@ -130,7 +130,7 @@ const RawDataTable: React.FC = () => {
       'Proposed Total Sales': formatCurrency(item.proposed_total_sales),
       'Proposed Price': formatCurrency(item.proposed_price),
       'Proposed Discount': formatPercentage(item.proposed_discount),
-      '≤ MFC': item.is_proposed_price_lte_mfc,
+      'Unfavorable Pricing': item.is_proposed_price_lte_mfc === 'NO' ? 'Yes' : 'No',
       'Tracking Ratio': item.tracking_ratio?.toFixed(2) || '-'
     }));
 
@@ -263,7 +263,7 @@ const RawDataTable: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposed Total Sales</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposed Price</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposed Discount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">≤ MFC</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unfavorable</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tracking Ratio</th>
               </tr>
             </thead>
@@ -306,7 +306,15 @@ const RawDataTable: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.proposed_total_sales)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.proposed_price)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercentage(item.proposed_discount)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.is_proposed_price_lte_mfc}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        item.is_proposed_price_lte_mfc === 'NO' 
+                          ? 'bg-red-100 text-red-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {item.is_proposed_price_lte_mfc === 'NO' ? 'Yes' : 'No'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.tracking_ratio?.toFixed(2) || '-'}</td>
                   </tr>
                 ))

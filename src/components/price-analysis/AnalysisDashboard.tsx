@@ -20,7 +20,7 @@ const AnalysisDashboard: React.FC = () => {
     totalManufacturers: 0
   });
 
-  const [manufacturersData, setManufacturersData] = useState([]);
+  const [manufacturersData, setManufacturersData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,53 +38,109 @@ const AnalysisDashboard: React.FC = () => {
 
         if (!data || data.length === 0) {
           setError('No data available');
+          setLoading(false);
           return;
         }
 
         // Calculate overview metrics
+        const validData = data.filter(item => item !== null);
+        
+        // Calculate sales totals
+        const totalCommAndProposedSales = validData.reduce((sum, item) => 
+          sum + (Number(item.total_comm_and_proposed_sales) || 0), 0);
+        
+        const proposedTotalSales = validData.reduce((sum, item) => 
+          sum + (Number(item.proposed_total_sales) || 0), 0);
+        
+        // Commercial sales should be the difference between total and proposed
+        const commercialTotalSales = totalCommAndProposedSales - proposedTotalSales;
+
+        // Count items with commercial sales
+        const itemsWithCommercialSales = validData.filter(item => 
+          item.total_commercial_sales && item.total_commercial_sales > 0).length;
+        
+        // Get valid discount values (filter out null/undefined)
+        const validMfcDiscounts = validData
+          .filter(item => item.mfc_discount !== null && item.mfc_discount !== undefined)
+          .map(item => Number(item.mfc_discount));
+        
+        const validTcDiscounts = validData
+          .filter(item => item.tc_discount !== null && item.tc_discount !== undefined)
+          .map(item => Number(item.tc_discount));
+        
+        const validProposedDiscounts = validData
+          .filter(item => item.proposed_discount !== null && item.proposed_discount !== undefined)
+          .map(item => Number(item.proposed_discount));
+        
+        const validTrackingRatios = validData
+          .filter(item => item.tracking_ratio !== null && item.tracking_ratio !== undefined)
+          .map(item => Number(item.tracking_ratio));
+
+        // Count favorable vs unfavorable pricing
+        const favorablePricing = validData.filter(item => item.is_proposed_price_lte_mfc === 'YES').length;
+        const unfavorablePricing = validData.filter(item => item.is_proposed_price_lte_mfc === 'NO').length;
+
+        // Get unique manufacturers
+        const uniqueManufacturers = new Set(validData.map(item => item.mfr_name));
+
         const overview = {
-          totalCommAndProposedSales: data.reduce((sum, item) => sum + (item.total_comm_and_proposed_sales || 0), 0),
-          commercialTotalSales: data.reduce((sum, item) => sum + (item.total_commercial_sales || 0), 0),
-          proposedTotalSales: data.reduce((sum, item) => sum + (item.proposed_total_sales || 0), 0),
-          totalItems: data.length,
-          itemsWithCommercialSales: data.filter(item => item.total_commercial_sales > 0).length,
-          itemsWithZeroCommercialSales: data.filter(item => !item.total_commercial_sales || item.total_commercial_sales === 0).length,
+          totalCommAndProposedSales,
+          commercialTotalSales,
+          proposedTotalSales,
+          totalItems: validData.length,
+          itemsWithCommercialSales,
+          itemsWithZeroCommercialSales: validData.length - itemsWithCommercialSales,
           mfcDiscountRange: {
-            min: Math.min(...data.filter(item => item.mfc_discount !== null).map(item => item.mfc_discount || 0)),
-            max: Math.max(...data.filter(item => item.mfc_discount !== null).map(item => item.mfc_discount || 0))
+            min: validMfcDiscounts.length ? Math.min(...validMfcDiscounts) : 0,
+            max: validMfcDiscounts.length ? Math.max(...validMfcDiscounts) : 0
           },
           tcDiscountRange: {
-            min: Math.min(...data.filter(item => item.tc_discount !== null).map(item => item.tc_discount || 0)),
-            max: Math.max(...data.filter(item => item.tc_discount !== null).map(item => item.tc_discount || 0))
+            min: validTcDiscounts.length ? Math.min(...validTcDiscounts) : 0,
+            max: validTcDiscounts.length ? Math.max(...validTcDiscounts) : 0
           },
           proposedDiscountRange: {
-            min: Math.min(...data.filter(item => item.proposed_discount !== null).map(item => item.proposed_discount || 0)),
-            max: Math.max(...data.filter(item => item.proposed_discount !== null).map(item => item.proposed_discount || 0))
+            min: validProposedDiscounts.length ? Math.min(...validProposedDiscounts) : 0,
+            max: validProposedDiscounts.length ? Math.max(...validProposedDiscounts) : 0
           },
           proposedTcRatio: {
-            min: Math.min(...data.filter(item => item.tracking_ratio !== null).map(item => item.tracking_ratio || 0)),
-            max: Math.max(...data.filter(item => item.tracking_ratio !== null).map(item => item.tracking_ratio || 0))
+            min: validTrackingRatios.length ? Math.min(...validTrackingRatios) : 0,
+            max: validTrackingRatios.length ? Math.max(...validTrackingRatios) : 0
           },
           proposedPriceLteMfc: {
-            true: data.filter(item => item.is_proposed_price_lte_mfc === 'YES').length,
-            false: data.filter(item => item.is_proposed_price_lte_mfc === 'NO').length
+            true: favorablePricing,
+            false: unfavorablePricing
           },
-          totalManufacturers: new Set(data.map(item => item.mfr_name)).size
+          totalManufacturers: uniqueManufacturers.size
         };
 
-        // Calculate manufacturer statistics
-        const manufacturerStats = Array.from(new Set(data.map(item => item.mfr_name)))
-          .map(mfrName => {
-            const mfrItems = data.filter(item => item.mfr_name === mfrName);
-            return {
+        // Calculate manufacturer statistics - get all manufacturers
+        const manufacturerMap = new Map();
+        
+        validData.forEach(item => {
+          if (!item.mfr_name) return;
+          
+          const mfrName = item.mfr_name;
+          if (!manufacturerMap.has(mfrName)) {
+            manufacturerMap.set(mfrName, {
               name: mfrName,
-              items: mfrItems.length,
-              totalSales: mfrItems.reduce((sum, item) => sum + (item.total_comm_and_proposed_sales || 0), 0),
-              zeroSales: mfrItems.filter(item => !item.total_commercial_sales || item.total_commercial_sales === 0).length
-            };
-          })
-          .sort((a, b) => b.totalSales - a.totalSales)
-          .slice(0, 4);
+              items: 0,
+              totalSales: 0,
+              zeroSales: 0
+            });
+          }
+          
+          const mfrData = manufacturerMap.get(mfrName);
+          mfrData.items++;
+          mfrData.totalSales += Number(item.total_comm_and_proposed_sales) || 0;
+          
+          if (!item.total_commercial_sales || item.total_commercial_sales === 0) {
+            mfrData.zeroSales++;
+          }
+        });
+        
+        // Convert map to array and sort by total sales
+        const manufacturerStats = Array.from(manufacturerMap.values())
+          .sort((a, b) => b.totalSales - a.totalSales);
 
         setOverviewData(overview);
         setManufacturersData(manufacturerStats);
@@ -286,19 +342,38 @@ const AnalysisDashboard: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Total Sales
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Zero Sales Items
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Zero Sales %
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {manufacturersData.map((manufacturer) => (
-                    <tr key={manufacturer.name}>
+                    <tr key={manufacturer.name} className={
+                      (manufacturer.zeroSales / manufacturer.items) * 100 > 15 
+                        ? 'bg-amber-50'
+                        : ''
+                    }>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {manufacturer.name}
+                        {(manufacturer.zeroSales / manufacturer.items) * 100 > 15 && (
+                          <AlertCircle className="inline-block ml-2 h-4 w-4 text-amber-500" />
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {manufacturer.items}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatCurrency(manufacturer.totalSales)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {manufacturer.zeroSales}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {((manufacturer.zeroSales / manufacturer.items) * 100).toFixed(1)}%
                       </td>
                     </tr>
                   ))}
