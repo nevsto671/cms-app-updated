@@ -1,142 +1,179 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { DollarSign, TrendingUp, BarChart2 } from 'lucide-react';
-
-const mockData = {
-  priceDistribution: [
-    { name: '0-1000', value: 15 },
-    { name: '1001-5000', value: 45 },
-    { name: '5001-10000', value: 25 },
-    { name: '10000+', value: 15 }
-  ],
-  discountTrends: [
-    { name: 'Jan', commercial: 20, proposed: 25 },
-    { name: 'Feb', commercial: 22, proposed: 28 },
-    { name: 'Mar', commercial: 25, proposed: 30 },
-    { name: 'Apr', commercial: 21, proposed: 27 },
-    { name: 'May', commercial: 24, proposed: 29 }
-  ],
-  metrics: {
-    averageDiscount: 28.5,
-    medianPrice: 5750,
-    priceVariance: 12.8
-  }
-};
-
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const AnalysisDashboard: React.FC = () => {
+  // Mock data - replace with real data from your API/database
+  const overviewData = {
+    totalCommAndProposedSales: 18234920,
+    commercialTotalSales: 13959200,
+    proposedTotalSales: 4275820,
+    totalItems: 661,
+    itemsWithCommercialSales: 548,
+    itemsWithZeroCommercialSales: 113,
+    mfcDiscountRange: { min: 16.0, max: 65.8 },
+    tcDiscountRange: { min: 42.3, max: 89.7 },
+    proposedDiscountRange: { min: 25.8, max: 82.4 },
+    proposedTcRatio: { min: 0.61, max: 10.38 },
+    proposedPriceLteMfc: { true: 435, false: 226 },
+    totalManufacturers: 12
+  };
+
+  const manufacturersData = [
+    { name: 'MedSupply Inc', items: 24, totalSales: 35845 },
+    { name: 'NovaCare', items: 18, totalSales: 42780 },
+    { name: 'MediPlus', items: 12, totalSales: 28450 },
+    { name: 'SafetyFirst', items: 8, totalSales: 38750 }
+  ];
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Average Discount</h3>
-            <DollarSign className="text-green-500" size={24} />
+      {/* Overview Card */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Proposed Offer Overview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">Total Comm. & Proposed Sales</div>
+              <div className="text-lg font-semibold">{formatCurrency(overviewData.totalCommAndProposedSales)}</div>
+            </div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">Commercial Total Sales</div>
+              <div className="text-lg font-semibold">{formatCurrency(overviewData.commercialTotalSales)}</div>
+            </div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">Proposed Total Sales</div>
+              <div className="text-lg font-semibold">{formatCurrency(overviewData.proposedTotalSales)}</div>
+            </div>
           </div>
-          <div className="text-3xl font-bold text-gray-900">{mockData.metrics.averageDiscount}%</div>
-          <p className="text-sm text-green-600 mt-2">+2.3% from last period</p>
-        </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Median Price</h3>
-            <TrendingUp className="text-blue-500" size={24} />
+          <div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">Total Items</div>
+              <div className="text-lg font-semibold">
+                {overviewData.totalItems} ({overviewData.itemsWithZeroCommercialSales} {((overviewData.itemsWithZeroCommercialSales / overviewData.totalItems) * 100).toFixed(1)}%)
+              </div>
+            </div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">Items with Commercial Sales</div>
+              <div className="text-lg font-semibold">
+                {overviewData.itemsWithCommercialSales} ({((overviewData.itemsWithCommercialSales / overviewData.totalItems) * 100).toFixed(1)}%)
+              </div>
+            </div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">Items with Zero Commercial Sales</div>
+              <div className="text-lg font-semibold">
+                {overviewData.itemsWithZeroCommercialSales} ({((overviewData.itemsWithZeroCommercialSales / overviewData.totalItems) * 100).toFixed(1)}%)
+              </div>
+            </div>
           </div>
-          <div className="text-3xl font-bold text-gray-900">
-            {new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              minimumFractionDigits: 0
-            }).format(mockData.metrics.medianPrice)}
-          </div>
-          <p className="text-sm text-blue-600 mt-2">Across all products</p>
-        </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Price Variance</h3>
-            <BarChart2 className="text-purple-500" size={24} />
+          <div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">MFC % Discount</div>
+              <div className="text-lg font-semibold">
+                {overviewData.mfcDiscountRange.min}% - {overviewData.mfcDiscountRange.max}%
+              </div>
+            </div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">TC % Discount</div>
+              <div className="text-lg font-semibold">
+                {overviewData.tcDiscountRange.min}% - {overviewData.tcDiscountRange.max}%
+              </div>
+            </div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">Proposed % Discount</div>
+              <div className="text-lg font-semibold">
+                {overviewData.proposedDiscountRange.min}% - {overviewData.proposedDiscountRange.max}%
+              </div>
+            </div>
           </div>
-          <div className="text-3xl font-bold text-gray-900">{mockData.metrics.priceVariance}%</div>
-          <p className="text-sm text-purple-600 mt-2">Standard deviation</p>
+
+          <div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">Proposed TC Ratio</div>
+              <div className="text-lg font-semibold">
+                {overviewData.proposedTcRatio.min} - {overviewData.proposedTcRatio.max}
+              </div>
+            </div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">Proposed Price ≤ MFC Price</div>
+              <div className="text-lg font-semibold">
+                {overviewData.proposedPriceLteMfc.true} ({((overviewData.proposedPriceLteMfc.true / overviewData.totalItems) * 100).toFixed(1)}%) True,{' '}
+                {overviewData.proposedPriceLteMfc.false} ({((overviewData.proposedPriceLteMfc.false / overviewData.totalItems) * 100).toFixed(1)}%) False
+              </div>
+            </div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">Total Manufacturers</div>
+              <div className="text-lg font-semibold">{overviewData.totalManufacturers}</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">Price Distribution</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={mockData.priceDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {mockData.priceDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Manufacturers Summary */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">Manufacturers Summary</h2>
+        
+        <div className="h-[400px] mb-6">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={manufacturersData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip 
+                formatter={(value: number) => [value, 'Items']}
+                labelStyle={{ color: '#111827' }}
+                contentStyle={{ 
+                  backgroundColor: 'white',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '0.5rem'
+                }}
+              />
+              <Bar dataKey="items" fill="#818CF8" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">Discount Trends</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mockData.discountTrends}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="commercial" name="Commercial Discount" fill="#3B82F6" />
-                <Bar dataKey="proposed" name="Proposed Discount" fill="#10B981" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Summary Statistics */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4">Summary Statistics</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-600">Sample Size</h4>
-            <p className="text-2xl font-bold text-gray-900 mt-1">156</p>
-            <p className="text-xs text-gray-500 mt-1">Total products analyzed</p>
-          </div>
-          
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-600">Price Range</h4>
-            <p className="text-2xl font-bold text-gray-900 mt-1">$2.7K - $19K</p>
-            <p className="text-xs text-gray-500 mt-1">Min-Max spread</p>
-          </div>
-          
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-600">Discount Range</h4>
-            <p className="text-2xl font-bold text-gray-900 mt-1">15% - 79%</p>
-            <p className="text-xs text-gray-500 mt-1">Discount spread</p>
-          </div>
-          
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-600">Confidence Level</h4>
-            <p className="text-2xl font-bold text-gray-900 mt-1">95%</p>
-            <p className="text-xs text-gray-500 mt-1">Statistical confidence</p>
-          </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Manufacturer
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Items
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Total Sales
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {manufacturersData.map((manufacturer) => (
+                <tr key={manufacturer.name}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {manufacturer.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {manufacturer.items}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatCurrency(manufacturer.totalSales)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
