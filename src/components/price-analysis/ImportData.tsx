@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, X, AlertCircle, Download } from 'lucide-react';
 import Papa from 'papaparse';
 import { supabase } from '../../lib/supabase';
-import { calculateTotalCommercialSales, calculateDiscountPercentage } from '../../utils/calculations';
+import { calculateDiscountPercentage } from '../../utils/calculations';
 
 interface ImportStatus {
   total: number;
@@ -124,12 +124,9 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       'total_comm_and_proposed_sales',
       'commercial_price_list',
       'mfc_price',
-      'mfc_discount',
       'tc_price',
-      'tc_discount',
       'tc_total_sales',
       'proposed_price',
-      'proposed_discount',
       'proposed_total_sales',
       'tracking_ratio'
     ];
@@ -157,15 +154,32 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       }
     }
 
+    // Calculate discounts based on commercial price list
+    if (row.commercial_price_list && row.mfc_price) {
+      row.mfc_discount = calculateDiscountPercentage(row.commercial_price_list, row.mfc_price);
+    }
+
+    if (row.commercial_price_list && row.tc_price) {
+      row.tc_discount = calculateDiscountPercentage(row.commercial_price_list, row.tc_price);
+    }
+
+    if (row.commercial_price_list && row.proposed_price) {
+      row.proposed_discount = calculateDiscountPercentage(row.commercial_price_list, row.proposed_price);
+    }
+
     // Calculate total commercial sales
-    row.total_commercial_sales = calculateTotalCommercialSales(
-      row.total_comm_and_proposed_sales,
-      row.proposed_total_sales
-    );
+    if (row.total_comm_and_proposed_sales !== undefined && row.proposed_total_sales !== undefined) {
+      row.total_commercial_sales = row.total_comm_and_proposed_sales - row.proposed_total_sales;
+    }
 
     // Validate the calculated value
     if (row.total_commercial_sales < 0) {
       throw new Error('Total commercial sales cannot be negative');
+    }
+
+    // Determine if proposed price is less than or equal to MFC price
+    if (row.proposed_price !== undefined && row.mfc_price !== undefined) {
+      row.is_proposed_price_lte_mfc = row.proposed_price <= row.mfc_price ? 'YES' : 'NO';
     }
 
     return true;

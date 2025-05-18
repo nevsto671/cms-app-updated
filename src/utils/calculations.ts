@@ -4,6 +4,7 @@
 
 /**
  * Calculate discount percentage
+ * This calculates the discount as a percentage off the commercial price list
  */
 export function calculateDiscountPercentage(commercialPriceList: number, comparisonPrice: number): number {
   if (commercialPriceList === 0) return 0;

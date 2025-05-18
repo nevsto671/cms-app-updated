@@ -45,7 +45,7 @@ const RawDataTable: React.FC = () => {
     }).format(value);
   };
 
-  const formatPercent = (value: number | null | undefined): string => {
+  const formatPercentage = (value: number | null | undefined): string => {
     if (value === null || value === undefined) return '-';
     return `${value.toFixed(2)}%`;
   };
@@ -57,6 +57,13 @@ const RawDataTable: React.FC = () => {
       setSelectedField(field);
       setSortDirection('asc');
     }
+  };
+
+  const calculateDiscount = (commercialPriceList: number | null | undefined, price: number | null | undefined): number | null => {
+    if (commercialPriceList == null || price == null || commercialPriceList === 0) return null;
+
+    const discount = ((commercialPriceList - price) / commercialPriceList) * 100;
+    return Number(discount.toFixed(2));
   };
 
   const handleExport = () => {
@@ -71,12 +78,12 @@ const RawDataTable: React.FC = () => {
       'Total Commercial Sales': formatCurrency(item.total_commercial_sales),
       'Commercial Price List': formatCurrency(item.commercial_price_list),
       'MFC Price': formatCurrency(item.mfc_price),
-      'MFC Discount': formatPercent(item.mfc_discount),
+      'MFC Discount': formatPercentage(item.mfc_discount),
       'TC Price': formatCurrency(item.tc_price),
-      'TC Discount': formatPercent(item.tc_discount),
+      'TC Discount': formatPercentage(item.tc_discount),
       'TC Total Sales': formatCurrency(item.tc_total_sales),
       'Proposed Price': formatCurrency(item.proposed_price),
-      'Proposed Discount': formatPercent(item.proposed_discount),
+      'Proposed Discount': formatPercentage(item.proposed_discount),
       'Proposed Total Sales': formatCurrency(item.proposed_total_sales),
       '≤ MFC': item.is_proposed_price_lte_mfc,
       'Tracking Ratio': item.tracking_ratio?.toFixed(2) || '-'
@@ -200,12 +207,12 @@ const RawDataTable: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.total_commercial_sales)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.commercial_price_list)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.mfc_price)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercent(item.mfc_discount)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercentage(item.mfc_discount)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.tc_price)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercent(item.tc_discount)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercentage(item.tc_discount)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.tc_total_sales)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.proposed_price)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercent(item.proposed_discount)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercentage(item.proposed_discount)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.proposed_total_sales)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.is_proposed_price_lte_mfc}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.tracking_ratio?.toFixed(2) || '-'}</td>
