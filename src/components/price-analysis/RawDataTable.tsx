@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Download, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Filter, Download, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { PriceAnalysis } from '../../types/catalog';
 import { supabase } from '../../lib/supabase';
 import Papa from 'papaparse';
@@ -19,6 +19,7 @@ const RawDataTable: React.FC = () => {
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       const { data: priceData, error: fetchError } = await supabase
         .from('price_analysis')
         .select('*')
@@ -34,8 +35,8 @@ const RawDataTable: React.FC = () => {
     }
   };
 
-  const formatCurrency = (value: number | null): string => {
-    if (value === null) return '-';
+  const formatCurrency = (value: number | null | undefined): string => {
+    if (value === null || value === undefined) return '-';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -58,7 +59,7 @@ const RawDataTable: React.FC = () => {
   };
 
   const handleExport = () => {
-    const csvData = data.map(item => ({
+    const exportData = data.map(item => ({
       'SIN': item.sin,
       'Item Number': item.itemNumber,
       'Description': item.description,
@@ -80,7 +81,7 @@ const RawDataTable: React.FC = () => {
       'Tracking Ratio': item.trackingRatio
     }));
 
-    const csv = Papa.unparse(csvData);
+    const csv = Papa.unparse(exportData);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -158,7 +159,7 @@ const RawDataTable: React.FC = () => {
                 Total Comm. & Proposed Sales
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Total Comm Sales
+                Total Commercial Sales
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Commercial Price List
@@ -198,15 +199,16 @@ const RawDataTable: React.FC = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={18} className="px-6 py-4 text-center">
+                <td colSpan={19} className="px-6 py-4 text-center">
                   <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <RefreshCw className="animate-spin h-5 w-5 text-blue-500 mr-2" />
+                    Loading...
                   </div>
                 </td>
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={18} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={19} className="px-6 py-4 text-center text-gray-500">
                   No data available
                 </td>
               </tr>
