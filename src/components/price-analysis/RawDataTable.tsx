@@ -65,7 +65,8 @@ const RawDataTable: React.FC = () => {
       'Manufacturer Name': item.mfrName,
       'Manufacturer Number': item.mfrNumber,
       'Units Sold': item.unitsSoldQty,
-      'Total Commercial Sales': item.totalCommercialSales,
+      'Total Comm. & Proposed Sales': item.totalCommAndProposedSales,
+      'Total Commercial Sales': item.totalCommAndProposedSales - (item.proposedTotalSales || 0),
       'Commercial Price': item.commercialPriceList,
       'MFC Price': item.mfcPrice,
       'MFC Discount': item.mfcDiscount,
@@ -219,7 +220,9 @@ const RawDataTable: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.mfrNumber}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.unitsSoldQty}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.totalCommAndProposedSales)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.totalCommercialSales)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {formatCurrency(item.totalCommAndProposedSales - (item.proposedTotalSales || 0))}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.commercialPriceList)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.mfcPrice)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercent(item.mfcDiscount)}</td>
