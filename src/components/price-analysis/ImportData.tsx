@@ -127,8 +127,12 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       'commercial_price_list',
       'mfc_price',
       'mfc_discount',
+      'tc_price',
+      'tc_discount',
+      'tc_total_sales',
       'proposed_price',
       'proposed_discount',
+      'proposed_total_sales',
       'tracking_ratio'
     ];
 
@@ -139,10 +143,19 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       }
     }
 
-    // Validate numeric fields
+    // Validate and convert numeric fields
     for (const field of numericFields) {
-      if (row[field] && isNaN(parseFloat(row[field]))) {
-        throw new Error(`Invalid numeric value for ${field}`);
+      if (row[field]) {
+        // Remove any currency symbols, commas and whitespace
+        const cleanValue = row[field].toString().replace(/[$,\s]/g, '');
+        const numValue = parseFloat(cleanValue);
+        
+        if (isNaN(numValue)) {
+          throw new Error(`Invalid numeric value for ${field}: ${row[field]}`);
+        }
+        
+        // Update the row with the cleaned numeric value
+        row[field] = numValue;
       }
     }
 
@@ -174,36 +187,12 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       try {
         validateRow(row);
 
-        // Convert numeric fields to numbers
-        const numericFields = [
-          'units_sold_qty',
-          'total_comm_and_proposed_sales',
-          'total_commercial_sales',
-          'commercial_price_list',
-          'mfc_price',
-          'mfc_discount',
-          'tc_price',
-          'tc_discount',
-          'tc_total_sales',
-          'proposed_price',
-          'proposed_discount',
-          'proposed_total_sales',
-          'tracking_ratio'
-        ];
-
-        const processedRow = { ...row };
-        numericFields.forEach(field => {
-          if (processedRow[field]) {
-            processedRow[field] = parseFloat(processedRow[field]);
-          }
-        });
-
         const { error: insertError } = await supabase
           .from('price_analysis')
           .insert({
-            ...processedRow,
+            ...row,
             upload_batch_id: batchId,
-            created_by: user.id // Set the created_by field to the current user's ID
+            created_by: user.id
           });
 
         if (insertError) throw insertError;
