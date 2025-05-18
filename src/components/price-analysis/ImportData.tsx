@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, AlertCircle, Download } from 'lucide-react';
 import Papa from 'papaparse';
 import { supabase } from '../../lib/supabase';
@@ -18,6 +18,15 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [status, setStatus] = useState<ImportStatus | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [cancelImport, setCancelImport] = useState(false);
+  const importCancelledRef = useRef(false);
+
+  // Reset cancel flag when component unmounts or when starting a new import
+  useEffect(() => {
+    return () => {
+      importCancelledRef.current = false;
+    };
+  }, []);
 
   const CSV_HEADERS = [
     'sin',
@@ -112,6 +121,7 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     const numericFields = [
       'units_sold_qty',
       'total_comm_and_proposed_sales',
+      'total_commercial_sales',
       'commercial_price_list',
       'mfc_price',
       'tc_price',
@@ -185,7 +195,7 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     return true;
   };
 
-  const processImport = async (data: any[]) => {
+  const processImport = async (items: any[]) => {
     // Get the current user's ID
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
@@ -195,20 +205,30 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
 
     const batchId = new Date().getTime().toString();
     const status: ImportStatus = {
-      total: data.length,
+      total: items.length,
       processed: 0,
       successful: 0,
       failed: 0
     };
 
-    for (let i = 0; i < data.length; i++) {
+    // Reset cancel flag
+    importCancelledRef.current = false;
+    setCancelImport(false);
+
+    for (let i = 0; i < items.length; i++) {
+      // Check if import has been cancelled
+      if (importCancelledRef.current) {
+        setError('Import cancelled by user');
+        break;
+      }
+
       try {
-        validateRow(data[i], i);
+        validateRow(items[i], i);
 
         const { error: insertError } = await supabase
           .from('price_analysis')
           .insert({
-            ...data[i],
+            ...items[i],
             upload_batch_id: batchId,
             created_by: user.id
           });
@@ -220,9 +240,12 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         console.error('Import error:', err);
         status.failed++;
       }
-
+      
       status.processed++;
       setStatus({ ...status });
+
+      // Add a small delay to allow UI updates and cancellation checks
+      await new Promise(resolve => setTimeout(resolve, 10));
     }
 
     return status;
@@ -234,8 +257,11 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     setImporting(true);
     setError(null);
     setStatus(null);
+    setCancelImport(false);
+    importCancelledRef.current = false;
 
     try {
+      // Parse CSV file
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
@@ -249,7 +275,7 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
           try {
             const finalStatus = await processImport(results.data);
             
-            if (finalStatus.successful > 0) {
+            if (!importCancelledRef.current && finalStatus.successful > 0) {
               setTimeout(() => {
                 onComplete();
               }, 2000);
@@ -269,6 +295,12 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       setError(err instanceof Error ? err.message : 'Failed to import data');
       setImporting(false);
     }
+  };
+
+  const handleCancelImport = () => {
+    importCancelledRef.current = true;
+    setCancelImport(true);
+    setError('Import cancellation requested. Finishing current batch...');
   };
 
   return (
@@ -394,6 +426,26 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
               </div>
             )}
           </div>
+
+          {importing && !cancelImport && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={handleCancelImport}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                Cancel Import
+              </button>
+            </div>
+          )}
+
+          {cancelImport && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={16} />
+                <span>Cancelling import... Please wait while current operations complete.</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
