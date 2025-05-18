@@ -50,15 +50,6 @@ const RawDataTable: React.FC = () => {
     return `${value.toFixed(2)}%`;
   };
 
-  const handleSort = (field: keyof PriceAnalysis) => {
-    if (selectedField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSelectedField(field);
-      setSortDirection('asc');
-    }
-  };
-
   const calculateDiscount = (commercialPriceList: number | null | undefined, price: number | null | undefined): number | null => {
     if (commercialPriceList == null || price == null || commercialPriceList === 0) return null;
 
@@ -82,17 +73,17 @@ const RawDataTable: React.FC = () => {
       'TC Price': formatCurrency(item.tc_price),
       'TC Discount': formatPercentage(item.tc_discount),
       'TC Total Sales': formatCurrency(item.tc_total_sales),
+      'Proposed Total Sales': formatCurrency(item.proposed_total_sales),
       'Proposed Price': formatCurrency(item.proposed_price),
       'Proposed Discount': formatPercentage(item.proposed_discount),
-      'Proposed Total Sales': formatCurrency(item.proposed_total_sales),
       '≤ MFC': item.is_proposed_price_lte_mfc,
       'Tracking Ratio': item.tracking_ratio?.toFixed(2) || '-'
     }));
 
     const csv = Papa.unparse(exportData);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
     link.setAttribute('href', url);
     link.setAttribute('download', `price_analysis_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
@@ -102,7 +93,7 @@ const RawDataTable: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 -m-4"> {/* Added negative margin to remove padding */}
+    <div className="space-y-4 -m-4">
       <div className="flex justify-between items-center p-4 bg-white border-b border-gray-200">
         <div className="relative">
           <input
@@ -171,9 +162,9 @@ const RawDataTable: React.FC = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TC Price</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TC Discount</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TC Total Sales</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposed Total Sales</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposed Price</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposed Discount</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposed Total Sales</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">≤ MFC</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tracking Ratio</th>
             </tr>
@@ -211,9 +202,9 @@ const RawDataTable: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.tc_price)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercentage(item.tc_discount)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.tc_total_sales)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.proposed_total_sales)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.proposed_price)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercentage(item.proposed_discount)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.proposed_total_sales)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.is_proposed_price_lte_mfc}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.tracking_ratio?.toFixed(2) || '-'}</td>
                 </tr>
