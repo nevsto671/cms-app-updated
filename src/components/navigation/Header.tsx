@@ -28,11 +28,25 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleLogout = async () => {
     try {
+      // First clear local storage
+      const STORAGE_KEY = 'sb-auth';
+      window.localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem(`${STORAGE_KEY}-event-queue`);
+      window.localStorage.removeItem(`${STORAGE_KEY}-token`);
+
+      // Then attempt to sign out from Supabase
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.warn('Error during Supabase signout:', error);
+        // Continue with navigation even if server signout fails
+      }
+
+      // Always navigate to login page
       navigate('/login');
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('Error during logout:', error);
+      // Ensure we still navigate to login even if there's an error
+      navigate('/login');
     }
   };
 

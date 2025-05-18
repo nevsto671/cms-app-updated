@@ -53,15 +53,21 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
 // Handle sign out and cleanup
 async function handleSignOut() {
-  // Clear all auth data
+  // Clear all auth data first
   window.localStorage.removeItem(STORAGE_KEY);
   window.localStorage.removeItem(`${STORAGE_KEY}-event-queue`);
   window.localStorage.removeItem(`${STORAGE_KEY}-token`);
   
   try {
-    await supabase.auth.signOut();
+    // Check if we have a session before attempting to sign out
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session) {
+      await supabase.auth.signOut();
+    }
   } catch (error) {
-    console.error('Error during sign out:', error);
+    console.warn('Error during sign out:', error);
+    // Continue with redirect even if server signout fails
   }
 
   // Only redirect if we're not already on the login page
