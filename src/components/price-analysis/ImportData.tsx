@@ -10,16 +10,13 @@ interface ImportStatus {
   failed: number;
 }
 
-interface ImportDataProps {
-  onComplete: () => void;
-}
-
-const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
+const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<ImportStatus | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragActive, setDragActive] = useState(false);
 
   const CSV_HEADERS = [
     'sin',
@@ -29,28 +26,40 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     'mfr_number',
     'units_sold_qty',
     'total_comm_and_proposed_sales',
+    'total_commercial_sales',
     'commercial_price_list',
     'mfc_price',
+    'mfc_discount',
     'tc_price',
+    'tc_discount',
     'tc_total_sales',
+    'proposed_price',
+    'proposed_discount',
+    'is_proposed_price_lte_mfc',
     'proposed_total_sales',
-    'proposed_price'
+    'tracking_ratio'
   ];
 
   const CSV_EXAMPLE = [
-    'L39IT-001',
-    'ITEM-001',
+    'L39',
+    'IT-001',
     'Sample Product Description',
     'Manufacturer Inc',
     'MFR-123',
     '100',
     '150000.00',
+    '120000.00',
     '1500.00',
     '1200.00',
+    '20.00',
     '1100.00',
+    '26.67',
     '110000.00',
+    '1000.00',
+    '33.33',
+    'YES',
     '100000.00',
-    '1000.00'
+    '1.25'
   ];
 
   const downloadTemplate = () => {
@@ -70,32 +79,57 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     URL.revokeObjectURL(url);
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile && droppedFile.type === 'text/csv') {
+      setFile(droppedFile);
+      setError(null);
+    } else {
+      setError('Please upload a CSV file');
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile && selectedFile.type === 'text/csv') {
+      setFile(selectedFile);
+      setError(null);
+    } else {
+      setError('Please upload a CSV file');
+    }
+  };
+
   const validateRow = (row: any): boolean => {
     const requiredFields = [
       'sin',
       'item_number',
-      'description',
       'mfr_name',
-      'mfr_number',
-      'units_sold_qty',
-      'total_comm_and_proposed_sales',
-      'commercial_price_list',
-      'mfc_price',
-      'tc_price',
-      'tc_total_sales',
-      'proposed_total_sales',
-      'proposed_price'
+      'mfr_number'
     ];
 
     const numericFields = [
       'units_sold_qty',
       'total_comm_and_proposed_sales',
+      'total_commercial_sales',
       'commercial_price_list',
       'mfc_price',
-      'tc_price',
-      'tc_total_sales',
-      'proposed_total_sales',
-      'proposed_price'
+      'mfc_discount',
+      'proposed_price',
+      'proposed_discount',
+      'tracking_ratio'
     ];
 
     // Check required fields
@@ -112,10 +146,16 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
       }
     }
 
+    // Validate is_proposed_price_lte_mfc
+    if (row.is_proposed_price_lte_mfc && !['YES', 'NO'].includes(row.is_proposed_price_lte_mfc)) {
+      throw new Error('is_proposed_price_lte_mfc must be either YES or NO');
+    }
+
     return true;
   };
 
   const processImport = async (data: any[]) => {
+    const batchId = new Date().getTime().toString();
     const status: ImportStatus = {
       total: data.length,
       processed: 0,
@@ -123,42 +163,49 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
       failed: 0
     };
 
-    const batchId = new Date().getTime().toString();
-
     for (const row of data) {
       try {
         validateRow(row);
 
+        // Convert numeric fields to numbers
+        const numericFields = [
+          'units_sold_qty',
+          'total_comm_and_proposed_sales',
+          'total_commercial_sales',
+          'commercial_price_list',
+          'mfc_price',
+          'mfc_discount',
+          'tc_price',
+          'tc_discount',
+          'tc_total_sales',
+          'proposed_price',
+          'proposed_discount',
+          'proposed_total_sales',
+          'tracking_ratio'
+        ];
+
+        const processedRow = { ...row };
+        numericFields.forEach(field => {
+          if (processedRow[field]) {
+            processedRow[field] = parseFloat(processedRow[field]);
+          }
+        });
+
         const { error: insertError } = await supabase
           .from('price_analysis')
-          .insert([{
-            sin: row.sin,
-            item_number: row.item_number,
-            description: row.description,
-            mfr_name: row.mfr_name,
-            mfr_number: row.mfr_number,
-            units_sold_qty: parseInt(row.units_sold_qty),
-            total_comm_and_proposed_sales: parseFloat(row.total_comm_and_proposed_sales),
-            commercial_price_list: parseFloat(row.commercial_price_list),
-            mfc_price: parseFloat(row.mfc_price),
-            tc_price: row.tc_price ? parseFloat(row.tc_price) : null,
-            tc_total_sales: row.tc_total_sales ? parseFloat(row.tc_total_sales) : null,
-            proposed_total_sales: row.proposed_total_sales ? parseFloat(row.proposed_total_sales) : null,
-            proposed_price: parseFloat(row.proposed_price),
+          .insert({
+            ...processedRow,
             upload_batch_id: batchId
-          }]);
+          });
 
-        if (insertError) {
-          console.error('Insert error:', insertError);
-          throw new Error(insertError.message);
-        }
-        
+        if (insertError) throw insertError;
+
         status.successful++;
       } catch (err) {
         console.error('Import error:', err);
         status.failed++;
       }
-      
+
       status.processed++;
       setStatus({ ...status });
     }
@@ -173,17 +220,17 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     setError(null);
     setStatus(null);
 
-    try {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: async (results) => {
-          if (results.errors.length > 0) {
-            setError(`CSV parsing error: ${results.errors[0].message}`);
-            setImporting(false);
-            return;
-          }
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        if (results.errors.length > 0) {
+          setError(`CSV parsing error: ${results.errors[0].message}`);
+          setImporting(false);
+          return;
+        }
 
+        try {
           const finalStatus = await processImport(results.data);
           
           if (finalStatus.successful > 0) {
@@ -191,16 +238,17 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
               onComplete();
             }, 2000);
           }
-        },
-        error: (error) => {
-          setError(`Failed to parse CSV file: ${error.message}`);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to import data');
+        } finally {
           setImporting(false);
         }
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to import data');
-      setImporting(false);
-    }
+      },
+      error: (error) => {
+        setError(`Failed to parse CSV file: ${error.message}`);
+        setImporting(false);
+      }
+    });
   };
 
   return (
@@ -228,23 +276,22 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
         </div>
       </div>
 
-      <div className="border-2 border-dashed rounded-lg p-8 text-center">
+      <div
+        className={`border-2 border-dashed rounded-lg p-8 text-center ${
+          dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <input
           type="file"
+          ref={fileInputRef}
+          onChange={handleFileSelect}
           accept=".csv"
           className="hidden"
-          onChange={(e) => {
-            const selectedFile = e.target.files?.[0];
-            if (selectedFile && selectedFile.type === 'text/csv') {
-              setFile(selectedFile);
-              setError(null);
-            } else {
-              setError('Please upload a CSV file');
-            }
-          }}
-          id="file-upload"
         />
-        
+
         {file ? (
           <div className="space-y-4">
             <div className="flex items-center justify-center gap-2 text-gray-700">
@@ -274,12 +321,12 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
             <Upload size={32} className="mx-auto text-gray-400 mb-4" />
             <p className="text-gray-600 mb-2">
               Drag and drop your CSV file here, or{' '}
-              <label
-                htmlFor="file-upload"
-                className="text-blue-500 hover:text-blue-600 cursor-pointer"
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="text-blue-500 hover:text-blue-600"
               >
                 browse
-              </label>
+              </button>
             </p>
             <p className="text-sm text-gray-500">
               Supported format: CSV
