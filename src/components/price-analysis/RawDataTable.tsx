@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Filter, Download, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { PriceAnalysis } from '../../types/catalog';
@@ -13,6 +13,15 @@ const RawDataTable: React.FC = () => {
   const [selectedField, setSelectedField] = useState<keyof PriceAnalysis>('sin');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [showFilters, setShowFilters] = useState(false);
+  
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
+  const headerScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (headerScrollRef.current) {
+      headerScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -194,14 +203,20 @@ const RawDataTable: React.FC = () => {
       )}
 
       <div className="bg-white rounded-lg shadow-sm">
-        <div className="sticky top-0 z-10 bg-white">
-          <div className="overflow-x-auto" style={{ height: '12px' }}>
-            <div style={{ width: '200%', height: '1px' }}></div>
-          </div>
+        <div 
+          ref={headerScrollRef}
+          className="overflow-x-auto border-b border-gray-200"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          <div style={{ width: '200%', height: '1px' }}></div>
         </div>
 
-        <div className="overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto">
-          <table className="w-full">
+        <div 
+          ref={tableWrapperRef}
+          className="overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto"
+          onScroll={handleScroll}
+        >
+          <table className="w-full min-w-max table-auto">
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SIN</th>
