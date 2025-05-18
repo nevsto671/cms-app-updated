@@ -95,8 +95,8 @@ const RawDataTable: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 -m-4"> {/* Added negative margin to remove padding */}
+      <div className="flex justify-between items-center p-4 bg-white border-b border-gray-200">
         <div className="relative">
           <input
             type="text"
@@ -134,7 +134,7 @@ const RawDataTable: React.FC = () => {
       </div>
 
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4">
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-4">
           <div className="flex">
             <div className="flex-shrink-0">
               <RefreshCw className="h-5 w-5 text-red-400" />
