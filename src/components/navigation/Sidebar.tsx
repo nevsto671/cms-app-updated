@@ -34,6 +34,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   const [isDesktopOpen, setIsDesktopOpen] = useState(true);
   const [isClassificationOpen, setIsClassificationOpen] = useState(true);
+  const [isContractOpen, setIsContractOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -103,29 +104,36 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
                 </div>
               )}
 
-              <NavItem 
-                icon={<Briefcase size={16} />} 
-                title="Contract Administration" 
-                onClick={() => handleNavigation('/contract-administration')} 
-                active={location.pathname === '/contract-administration'} 
-                isCollapsed={isCollapsed}
-              />
-
-              <NavItem 
-                icon={<DollarSign size={16} />} 
-                title="Price Analysis" 
-                onClick={() => handleNavigation('/price-analysis')} 
-                active={location.pathname === '/price-analysis'} 
-                isCollapsed={isCollapsed}
-              />
-
-              <NavItem 
-                icon={<FileBox size={16} />} 
-                title="DocTag Central" 
-                onClick={() => handleNavigation('/doctag-central')} 
-                active={location.pathname === '/doctag-central'} 
-                isCollapsed={isCollapsed}
-              />
+              <div>
+                <button
+                  onClick={() => setIsContractOpen(!isContractOpen)}
+                  className="w-full flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
+                >
+                  <Briefcase size={16} className="mr-2" />
+                  <span>Contract Administration</span>
+                  <span className="ml-auto">
+                    {isContractOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </span>
+                </button>
+                {isContractOpen && (
+                  <div className="ml-3 border-l border-gray-200 space-y-1">
+                    <NavItem 
+                      icon={<Briefcase size={16} />} 
+                      title="Overview" 
+                      onClick={() => handleNavigation('/contract-administration')} 
+                      active={location.pathname === '/contract-administration'} 
+                      isCollapsed={isCollapsed}
+                    />
+                    <NavItem 
+                      icon={<DollarSign size={16} />} 
+                      title="Price Analysis" 
+                      onClick={() => handleNavigation('/price-analysis')} 
+                      active={location.pathname === '/price-analysis'} 
+                      isCollapsed={isCollapsed}
+                    />
+                  </div>
+                )}
+              </div>
 
               <button
                 onClick={() => setIsClassificationOpen(!isClassificationOpen)}
