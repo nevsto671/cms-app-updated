@@ -7,9 +7,15 @@
  * This calculates the discount as a percentage off the commercial price list
  */
 export function calculateDiscountPercentage(commercialPriceList: number, comparisonPrice: number): number {
-  // Validate inputs are numbers and commercial price list is not zero
-  if (!commercialPriceList || commercialPriceList === 0) return 0;
-  if (!comparisonPrice) return 0;
+  // Validate inputs are valid numbers
+  if (typeof commercialPriceList !== 'number' || typeof comparisonPrice !== 'number') {
+    return 0;
+  }
+
+  // Ensure commercial price list is not zero to avoid division by zero
+  if (commercialPriceList === 0) {
+    return 0;
+  }
   
   const discountAmount = commercialPriceList - comparisonPrice;
   const discountPercentage = (discountAmount / commercialPriceList) * 100;
