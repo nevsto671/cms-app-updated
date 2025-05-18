@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, Bell, X } from 'lucide-react';
+import { AlertCircle, Bell, X, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const AnalysisDashboard: React.FC = () => {
@@ -176,7 +176,7 @@ const AnalysisDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="p-4 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <RefreshCw className="animate-spin h-8 w-8 text-blue-500 mx-auto" />
         <p className="mt-2 text-gray-600">Loading data...</p>
       </div>
     );

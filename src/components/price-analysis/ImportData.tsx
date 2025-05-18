@@ -11,7 +11,11 @@ interface ImportStatus {
   failed: number;
 }
 
-const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+interface ImportDataProps {
+  onComplete: () => void;
+}
+
+const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,11 +24,15 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [dragActive, setDragActive] = useState(false);
   const [cancelImport, setCancelImport] = useState(false);
   const importCancelledRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Reset cancel flag when component unmounts or when starting a new import
   useEffect(() => {
     return () => {
       importCancelledRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
   }, []);
 
@@ -214,38 +222,50 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     // Reset cancel flag
     importCancelledRef.current = false;
     setCancelImport(false);
+    
+    // Create a new AbortController for this import
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
 
-    for (let i = 0; i < items.length; i++) {
-      // Check if import has been cancelled
-      if (importCancelledRef.current) {
+    try {
+      for (let i = 0; i < items.length; i++) {
+        // Check if import has been cancelled
+        if (importCancelledRef.current || signal.aborted) {
+          setError('Import cancelled by user');
+          break;
+        }
+
+        try {
+          validateRow(items[i], i);
+
+          const { error: insertError } = await supabase
+            .from('price_analysis')
+            .insert({
+              ...items[i],
+              upload_batch_id: batchId,
+              created_by: user.id
+            });
+
+          if (insertError) throw insertError;
+
+          status.successful++;
+        } catch (err) {
+          console.error('Import error:', err);
+          status.failed++;
+        }
+        
+        status.processed++;
+        setStatus({ ...status });
+
+        // Add a small delay to allow UI updates and cancellation checks
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
         setError('Import cancelled by user');
-        break;
+      } else {
+        throw err;
       }
-
-      try {
-        validateRow(items[i], i);
-
-        const { error: insertError } = await supabase
-          .from('price_analysis')
-          .insert({
-            ...items[i],
-            upload_batch_id: batchId,
-            created_by: user.id
-          });
-
-        if (insertError) throw insertError;
-
-        status.successful++;
-      } catch (err) {
-        console.error('Import error:', err);
-        status.failed++;
-      }
-      
-      status.processed++;
-      setStatus({ ...status });
-
-      // Add a small delay to allow UI updates and cancellation checks
-      await new Promise(resolve => setTimeout(resolve, 10));
     }
 
     return status;
@@ -275,15 +295,21 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
           try {
             const finalStatus = await processImport(results.data);
             
-            if (!importCancelledRef.current && finalStatus.successful > 0) {
+            if (importCancelledRef.current) {
+              // If import was cancelled, automatically refresh after a short delay
               setTimeout(() => {
                 onComplete();
-              }, 2000);
+              }, 1500);
+            } else if (finalStatus.successful > 0) {
+              setTimeout(() => {
+                onComplete();
+              }, 1500);
             }
           } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to import data');
           } finally {
             setImporting(false);
+            abortControllerRef.current = null;
           }
         },
         error: (error) => {
@@ -301,6 +327,15 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     importCancelledRef.current = true;
     setCancelImport(true);
     setError('Import cancellation requested. Finishing current batch...');
+    
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Automatically refresh after a short delay
+    setTimeout(() => {
+      onComplete();
+    }, 1500);
   };
 
   return (
