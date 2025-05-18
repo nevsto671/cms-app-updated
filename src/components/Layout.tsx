@@ -15,7 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isHolding, setIsHolding] = useState(false);
 
   const handleSidebarToggle = useCallback(() => {
-    if (!sidebarLocked && !isHolding) {
+    if (!sidebarLocked || !isHolding) {
       setSidebarOpen(!sidebarOpen);
     }
   }, [sidebarLocked, sidebarOpen, isHolding]);
