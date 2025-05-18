@@ -51,25 +51,17 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
   const countItemsInFile = () => {
     if (!file) return;
     
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      preview: 0, // Just get header info
-      complete: (results) => {
-        // Get line count from file
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (e.target?.result) {
-            const content = e.target.result as string;
-            const lines = content.split('\n').filter(line => line.trim().length > 0);
-            // Subtract 1 for header row
-            const count = Math.max(0, lines.length - 1);
-            setItemCount(count);
-          }
-        };
-        reader.readAsText(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        const content = e.target.result as string;
+        // Count lines, excluding empty lines and header
+        const lines = content.split('\n').filter(line => line.trim().length > 0);
+        const count = Math.max(0, lines.length - 1); // Subtract 1 for header
+        setItemCount(count);
       }
-    });
+    };
+    reader.readAsText(file);
   };
 
   const calculateTimeRemaining = (processed: number, total: number, startTime: number): string => {
