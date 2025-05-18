@@ -194,15 +194,15 @@ const RawDataTable: React.FC = () => {
       )}
 
       <div className="bg-white rounded-lg shadow-sm">
-        <div className="overflow-x-auto" style={{ overflowY: 'hidden' }}>
-          <div style={{ height: '20px', overflow: 'auto' }}>
+        <div className="sticky top-0 z-10 bg-white">
+          <div className="overflow-x-auto" style={{ height: '12px' }}>
             <div style={{ width: '200%', height: '1px' }}></div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SIN</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item #</th>
