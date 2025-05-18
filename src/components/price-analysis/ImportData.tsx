@@ -20,7 +20,6 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<ImportStatus | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [dragActive, setDragActive] = useState(false);
 
   const CSV_HEADERS = [
     'sin',
@@ -32,20 +31,15 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     'total_comm_and_proposed_sales',
     'commercial_price_list',
     'mfc_price',
-    'mfc_discount',
     'tc_price',
-    'tc_discount',
     'tc_total_sales',
     'proposed_price',
-    'proposed_discount',
-    'is_proposed_price_lte_mfc',
-    'proposed_total_sales',
-    'tracking_ratio'
+    'proposed_total_sales'
   ];
 
   const CSV_EXAMPLE = [
-    'L39',
-    'IT-001',
+    'L39IT-001',
+    'ITEM-001',
     'Sample Product Description',
     'Manufacturer Inc',
     'MFR-123',
@@ -53,15 +47,10 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     '150000.00',
     '1500.00',
     '1200.00',
-    '20.00',
     '1100.00',
-    '26.67',
     '110000.00',
     '1000.00',
-    '33.33',
-    'YES',
-    '100000.00',
-    '1.25'
+    '100000.00'
   ];
 
   const downloadTemplate = () => {
@@ -81,39 +70,6 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     URL.revokeObjectURL(url);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-    
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === 'text/csv') {
-      setFile(droppedFile);
-      setError(null);
-    } else {
-      setError('Please upload a CSV file');
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile && selectedFile.type === 'text/csv') {
-      setFile(selectedFile);
-      setError(null);
-    } else {
-      setError('Please upload a CSV file');
-    }
-  };
-
   const validateRow = (row: any): boolean => {
     const requiredFields = [
       'sin',
@@ -127,10 +83,10 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
       'total_comm_and_proposed_sales',
       'commercial_price_list',
       'mfc_price',
-      'mfc_discount',
+      'tc_price',
+      'tc_total_sales',
       'proposed_price',
-      'proposed_discount',
-      'tracking_ratio'
+      'proposed_total_sales'
     ];
 
     // Check required fields
@@ -145,11 +101,6 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
       if (row[field] && isNaN(parseFloat(row[field]))) {
         throw new Error(`Invalid numeric value for ${field}`);
       }
-    }
-
-    // Validate is_proposed_price_lte_mfc
-    if (row.is_proposed_price_lte_mfc && !['YES', 'NO'].includes(row.is_proposed_price_lte_mfc)) {
-      throw new Error('is_proposed_price_lte_mfc must be either YES or NO');
     }
 
     return true;
@@ -179,15 +130,10 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
             total_comm_and_proposed_sales: parseFloat(row.total_comm_and_proposed_sales),
             commercial_price_list: parseFloat(row.commercial_price_list),
             mfc_price: parseFloat(row.mfc_price),
-            mfc_discount: parseFloat(row.mfc_discount),
             tc_price: row.tc_price ? parseFloat(row.tc_price) : null,
-            tc_discount: row.tc_discount ? parseFloat(row.tc_discount) : null,
             tc_total_sales: row.tc_total_sales ? parseFloat(row.tc_total_sales) : null,
             proposed_price: parseFloat(row.proposed_price),
-            proposed_discount: parseFloat(row.proposed_discount),
-            is_proposed_price_lte_mfc: row.is_proposed_price_lte_mfc,
             proposed_total_sales: row.proposed_total_sales ? parseFloat(row.proposed_total_sales) : null,
-            tracking_ratio: parseFloat(row.tracking_ratio),
             upload_batch_id: new Date().getTime().toString()
           }]);
 
@@ -267,22 +213,23 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
         </div>
       </div>
 
-      <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center ${
-          dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-        }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
+      <div className="border-2 border-dashed rounded-lg p-8 text-center">
         <input
           type="file"
-          ref={fileInputRef}
-          onChange={handleFileSelect}
           accept=".csv"
           className="hidden"
+          onChange={(e) => {
+            const selectedFile = e.target.files?.[0];
+            if (selectedFile && selectedFile.type === 'text/csv') {
+              setFile(selectedFile);
+              setError(null);
+            } else {
+              setError('Please upload a CSV file');
+            }
+          }}
+          id="file-upload"
         />
-
+        
         {file ? (
           <div className="space-y-4">
             <div className="flex items-center justify-center gap-2 text-gray-700">
@@ -312,12 +259,12 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
             <Upload size={32} className="mx-auto text-gray-400 mb-4" />
             <p className="text-gray-600 mb-2">
               Drag and drop your CSV file here, or{' '}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="text-blue-500 hover:text-blue-600"
+              <label
+                htmlFor="file-upload"
+                className="text-blue-500 hover:text-blue-600 cursor-pointer"
               >
                 browse
-              </button>
+              </label>
             </p>
             <p className="text-sm text-gray-500">
               Supported format: CSV
