@@ -50,11 +50,13 @@ const Header: React.FC<HeaderProps> = ({
             {isLocked ? (
               <button
                 onClick={onUnlock}
-                className="text-gray-400 hover:text-white focus:outline-none hidden lg:flex items-center mr-2 z-50 relative group"
+                className="text-gray-400 hover:text-white focus:outline-none hidden lg:flex items-center mr-2 z-50 relative group cursor-pointer"
                 title="Click to unlock sidebar"
               >
-                <ChevronLeft size={20} />
-                <ChevronLeft size={20} className="-ml-3" />
+                <div className="flex items-center" onClick={toggleSidebar}>
+                  <ChevronLeft size={20} />
+                  <ChevronLeft size={20} className="-ml-3" />
+                </div>
               </button>
             ) : (
               <button
@@ -62,11 +64,13 @@ const Header: React.FC<HeaderProps> = ({
                 onMouseUp={onMouseUp}
                 onMouseLeave={onMouseLeave}
                 onClick={toggleSidebar}
-                className="text-gray-400 hover:text-white focus:outline-none hidden lg:flex items-center mr-2 z-50 relative group"
+                className="text-gray-400 hover:text-white focus:outline-none hidden lg:flex items-center mr-2 z-50 relative group cursor-pointer"
                 title="Hold to lock sidebar"
               >
-                <ChevronLeft size={20} className={`transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''}`} />
-                <ChevronLeft size={20} className={`transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''} -ml-3`} />
+                <div className="flex items-center">
+                  <ChevronLeft size={20} className={`transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''}`} />
+                  <ChevronLeft size={20} className={`transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''} -ml-3`} />
+                </div>
                 {isHolding && (
                   <div className="absolute left-0 top-0 w-full h-full">
                     <div className="absolute left-0 top-0 w-full h-full bg-blue-500 opacity-20 rounded transition-all duration-1000 animate-pulse" />
