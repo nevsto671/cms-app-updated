@@ -43,11 +43,11 @@ export function formatCurrency(value: number | null | undefined): string {
 }
 
 /**
- * Format percentage value
+ * Format percentage value with exactly 2 decimal places
  */
 export function formatPercentage(value: number | null | undefined): string {
   if (value === null || value === undefined) return '-';
-  return `${value.toFixed(2)}%`;
+  return value.toFixed(2) + '%';
 }
 
 /**
