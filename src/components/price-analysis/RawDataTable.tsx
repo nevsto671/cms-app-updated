@@ -43,8 +43,8 @@ const RawDataTable: React.FC = () => {
     }).format(value);
   };
 
-  const formatPercent = (value: number | null): string => {
-    if (value === null) return '-';
+  const formatPercent = (value: number | null | undefined): string => {
+    if (value === null || value === undefined) return '-';
     return `${value.toFixed(2)}%`;
   };
 
@@ -233,7 +233,7 @@ const RawDataTable: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.proposedPrice)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPercent(item.proposedDiscount)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.isProposedPriceLteMfc}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.trackingRatio.toFixed(2)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.trackingRatio?.toFixed(2) || '-'}</td>
                 </tr>
               ))
             )}
