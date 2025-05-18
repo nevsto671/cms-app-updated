@@ -10,9 +10,11 @@ const PriceAnalysis: React.FC = () => {
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0); // Add refresh key for forcing re-render
 
   const handleImportComplete = () => {
     setActiveTab('raw');
+    setRefreshKey(prev => prev + 1); // Increment refresh key
   };
 
   const handleClearData = async () => {
@@ -28,7 +30,8 @@ const PriceAnalysis: React.FC = () => {
       if (clearError) throw clearError;
 
       setShowConfirmClear(false);
-      window.location.reload(); // Refresh to show empty state
+      setRefreshKey(prev => prev + 1); // Increment refresh key
+      setActiveTab('raw'); // Switch to raw data tab to show empty state
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to clear data');
     } finally {
@@ -123,9 +126,9 @@ const PriceAnalysis: React.FC = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-4">
           {activeTab === 'analysis' ? (
-            <AnalysisDashboard />
+            <AnalysisDashboard key={refreshKey} />
           ) : activeTab === 'raw' ? (
-            <RawDataTable />
+            <RawDataTable key={refreshKey} />
           ) : activeTab === 'import' ? (
             <ImportData onComplete={handleImportComplete} />
           ) : (
