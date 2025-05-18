@@ -154,6 +154,9 @@ const RawDataTable: React.FC = () => {
                 Units Sold
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total Comm. & Proposed Sales
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Total Comm Sales
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -215,6 +218,7 @@ const RawDataTable: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.mfrName}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.mfrNumber}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.unitsSoldQty}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.totalCommAndProposedSales)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.totalCommercialSales)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.commercialPriceList)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(item.mfcPrice)}</td>
