@@ -44,6 +44,12 @@ const Register: React.FC = () => {
     }
 
     try {
+      // Clear any existing auth data first
+      const STORAGE_KEY = 'sb-auth';
+      window.localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem(`${STORAGE_KEY}-event-queue`);
+      window.localStorage.removeItem(`${STORAGE_KEY}-token`);
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -54,6 +60,7 @@ const Register: React.FC = () => {
 
       if (signUpError) {
         setError(signUpError.message);
+        setLoading(false);
         return;
       }
 
@@ -67,7 +74,6 @@ const Register: React.FC = () => {
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again later.');
-    } finally {
       setLoading(false);
     }
   };

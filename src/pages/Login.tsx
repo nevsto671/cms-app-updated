@@ -41,6 +41,12 @@ const Login: React.FC = () => {
     }
 
     try {
+      // Clear any existing auth data first
+      const STORAGE_KEY = 'sb-auth';
+      window.localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem(`${STORAGE_KEY}-event-queue`);
+      window.localStorage.removeItem(`${STORAGE_KEY}-token`);
+
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -55,6 +61,7 @@ const Login: React.FC = () => {
         } else {
           setError('An error occurred during sign in. Please try again.');
         }
+        setLoading(false);
         return;
       }
 
@@ -65,12 +72,12 @@ const Login: React.FC = () => {
           navigate('/', { replace: true });
         } else {
           setError('Failed to establish session. Please try again.');
+          setLoading(false);
         }
       }
     } catch (err) {
       console.error('Login error:', err);
       setError('An unexpected error occurred. Please try again later.');
-    } finally {
       setLoading(false);
     }
   };

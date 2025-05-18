@@ -50,16 +50,16 @@ const AnalysisDashboard: React.FC = () => {
           itemsWithCommercialSales: data.filter(item => item.total_commercial_sales > 0).length,
           itemsWithZeroCommercialSales: data.filter(item => !item.total_commercial_sales || item.total_commercial_sales === 0).length,
           mfcDiscountRange: {
-            min: Math.min(...data.map(item => item.mfc_discount || 0)),
-            max: Math.max(...data.map(item => item.mfc_discount || 0))
+            min: Math.min(...data.filter(item => item.mfc_discount !== null).map(item => item.mfc_discount || 0)),
+            max: Math.max(...data.filter(item => item.mfc_discount !== null).map(item => item.mfc_discount || 0))
           },
           tcDiscountRange: {
             min: Math.min(...data.filter(item => item.tc_discount !== null).map(item => item.tc_discount || 0)),
             max: Math.max(...data.filter(item => item.tc_discount !== null).map(item => item.tc_discount || 0))
           },
           proposedDiscountRange: {
-            min: Math.min(...data.map(item => item.proposed_discount || 0)),
-            max: Math.max(...data.map(item => item.proposed_discount || 0))
+            min: Math.min(...data.filter(item => item.proposed_discount !== null).map(item => item.proposed_discount || 0)),
+            max: Math.max(...data.filter(item => item.proposed_discount !== null).map(item => item.proposed_discount || 0))
           },
           proposedTcRatio: {
             min: Math.min(...data.filter(item => item.tracking_ratio !== null).map(item => item.tracking_ratio || 0)),
@@ -162,123 +162,203 @@ const AnalysisDashboard: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white">
-        <h2 className="text-xl font-semibold text-gray-900 p-4 border-b border-gray-200">Proposed Offer Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-          <div>
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">Total Comm. & Proposed Sales</div>
-              <div className="text-lg font-semibold">{formatCurrency(overviewData.totalCommAndProposedSales)}</div>
-            </div>
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">Commercial Total Sales</div>
-              <div className="text-lg font-semibold">{formatCurrency(overviewData.commercialTotalSales)}</div>
-            </div>
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">Proposed Total Sales</div>
-              <div className="text-lg font-semibold">{formatCurrency(overviewData.proposedTotalSales)}</div>
-            </div>
-          </div>
-
-          <div>
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">Total Items</div>
-              <div className="text-lg font-semibold">
-                {overviewData.totalItems} ({overviewData.itemsWithZeroCommercialSales} {((overviewData.itemsWithZeroCommercialSales / overviewData.totalItems) * 100).toFixed(1)}%)
-              </div>
-            </div>
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">Items with Commercial Sales</div>
-              <div className="text-lg font-semibold">
-                {overviewData.itemsWithCommercialSales} ({((overviewData.itemsWithCommercialSales / overviewData.totalItems) * 100).toFixed(1)}%)
-              </div>
-            </div>
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">Items with Zero Commercial Sales</div>
-              <div className="text-lg font-semibold">
-                {overviewData.itemsWithZeroCommercialSales} ({((overviewData.itemsWithZeroCommercialSales / overviewData.totalItems) * 100).toFixed(1)}%)
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">MFC % Discount</div>
-              <div className="text-lg font-semibold">
-                {overviewData.mfcDiscountRange.min.toFixed(2)}% - {overviewData.mfcDiscountRange.max.toFixed(2)}%
-              </div>
-            </div>
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">TC % Discount</div>
-              <div className="text-lg font-semibold">
-                {overviewData.tcDiscountRange.min.toFixed(2)}% - {overviewData.tcDiscountRange.max.toFixed(2)}%
-              </div>
-            </div>
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">Proposed % Discount</div>
-              <div className="text-lg font-semibold">
-                {overviewData.proposedDiscountRange.min.toFixed(2)}% - {overviewData.proposedDiscountRange.max.toFixed(2)}%
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">Proposed TC Ratio</div>
-              <div className="text-lg font-semibold">
-                {overviewData.proposedTcRatio.min.toFixed(2)} - {overviewData.proposedTcRatio.max.toFixed(2)}
-              </div>
-            </div>
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">Proposed Price ≤ MFC Price</div>
-              <div className="text-lg font-semibold">
-                {overviewData.proposedPriceLteMfc.true} ({((overviewData.proposedPriceLteMfc.true / overviewData.totalItems) * 100).toFixed(1)}%) True,{' '}
-                {overviewData.proposedPriceLteMfc.false} ({((overviewData.proposedPriceLteMfc.false / overviewData.totalItems) * 100).toFixed(1)}%) False
-              </div>
-            </div>
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">Total Manufacturers</div>
-              <div className="text-lg font-semibold">{overviewData.totalManufacturers}</div>
-            </div>
-          </div>
-        </div>
+      <div className="bg-white border-b border-gray-200">
+        <nav className="flex space-x-4 px-4">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`py-4 px-2 text-sm font-medium border-b-2 ${
+              activeTab === 'overview'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('zeroSales')}
+            className={`py-4 px-2 text-sm font-medium border-b-2 ${
+              activeTab === 'zeroSales'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Zero Commercial Sales
+          </button>
+        </nav>
       </div>
 
-      <div className="bg-white mt-4">
-        <h2 className="text-xl font-semibold text-gray-900 p-4 border-b border-gray-200">Manufacturers Summary</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Manufacturer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Items
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Sales
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {manufacturersData.map((manufacturer) => (
-                <tr key={manufacturer.name}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {manufacturer.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {manufacturer.items}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatCurrency(manufacturer.totalSales)}
-                  </td>
+      {activeTab === 'overview' && (
+        <>
+          <div className="bg-white">
+            <h2 className="text-xl font-semibold text-gray-900 p-4 border-b border-gray-200">Proposed Offer Overview</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+              <div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">Total Comm. & Proposed Sales</div>
+                  <div className="text-lg font-semibold">{formatCurrency(overviewData.totalCommAndProposedSales)}</div>
+                </div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">Commercial Total Sales</div>
+                  <div className="text-lg font-semibold">{formatCurrency(overviewData.commercialTotalSales)}</div>
+                </div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">Proposed Total Sales</div>
+                  <div className="text-lg font-semibold">{formatCurrency(overviewData.proposedTotalSales)}</div>
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">Total Items</div>
+                  <div className="text-lg font-semibold">
+                    {overviewData.totalItems}
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">Items with Commercial Sales</div>
+                  <div className="text-lg font-semibold">
+                    {overviewData.itemsWithCommercialSales} ({((overviewData.itemsWithCommercialSales / overviewData.totalItems) * 100).toFixed(1)}%)
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">Items with Zero Commercial Sales</div>
+                  <div className="text-lg font-semibold">
+                    {overviewData.itemsWithZeroCommercialSales} ({((overviewData.itemsWithZeroCommercialSales / overviewData.totalItems) * 100).toFixed(1)}%)
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">MFC % Discount</div>
+                  <div className="text-lg font-semibold">
+                    {overviewData.mfcDiscountRange.min.toFixed(2)}% - {overviewData.mfcDiscountRange.max.toFixed(2)}%
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">TC % Discount</div>
+                  <div className="text-lg font-semibold">
+                    {overviewData.tcDiscountRange.min.toFixed(2)}% - {overviewData.tcDiscountRange.max.toFixed(2)}%
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">Proposed % Discount</div>
+                  <div className="text-lg font-semibold">
+                    {overviewData.proposedDiscountRange.min.toFixed(2)}% - {overviewData.proposedDiscountRange.max.toFixed(2)}%
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">Proposed TC Ratio</div>
+                  <div className="text-lg font-semibold">
+                    {overviewData.proposedTcRatio.min.toFixed(2)} - {overviewData.proposedTcRatio.max.toFixed(2)}
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">Proposed Price ≤ MFC Price</div>
+                  <div className="text-lg font-semibold">
+                    {overviewData.proposedPriceLteMfc.true} ({((overviewData.proposedPriceLteMfc.true / overviewData.totalItems) * 100).toFixed(1)}%) True,{' '}
+                    {overviewData.proposedPriceLteMfc.false} ({((overviewData.proposedPriceLteMfc.false / overviewData.totalItems) * 100).toFixed(1)}%) False
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">Total Manufacturers</div>
+                  <div className="text-lg font-semibold">{overviewData.totalManufacturers}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white mt-4">
+            <h2 className="text-xl font-semibold text-gray-900 p-4 border-b border-gray-200">Manufacturers Summary</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Manufacturer
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Items
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total Sales
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {manufacturersData.map((manufacturer) => (
+                    <tr key={manufacturer.name}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {manufacturer.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {manufacturer.items}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatCurrency(manufacturer.totalSales)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'zeroSales' && (
+        <div className="bg-white">
+          <h2 className="text-xl font-semibold text-gray-900 p-4 border-b border-gray-200">Zero Commercial Sales by Manufacturer</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Manufacturer
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Items
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Items with Zero Sales
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Percentage
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {manufacturersData.map((manufacturer) => (
+                  <tr key={manufacturer.name} className={
+                    (manufacturer.zeroSales / manufacturer.items) * 100 > 15 
+                      ? 'bg-amber-50'
+                      : ''
+                  }>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {manufacturer.name}
+                      {(manufacturer.zeroSales / manufacturer.items) * 100 > 15 && (
+                        <AlertCircle className="inline-block ml-2 h-4 w-4 text-amber-500" />
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {manufacturer.items}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {manufacturer.zeroSales}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {((manufacturer.zeroSales / manufacturer.items) * 100).toFixed(1)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

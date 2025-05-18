@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Settings, Menu, HelpCircle, LogOut, Info, ChevronLeft } from 'lucide-react';
+import { Search, Settings, Menu, HelpCircle, LogOut, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 
@@ -67,9 +67,8 @@ const Header: React.FC<HeaderProps> = ({
                 className="text-gray-400 hover:text-white focus:outline-none hidden lg:flex items-center mr-2 z-50 relative group cursor-pointer"
                 title="Click to unlock sidebar"
               >
-                <div className="flex items-center" onClick={toggleSidebar}>
-                  <ChevronLeft size={20} />
-                  <ChevronLeft size={20} className="-ml-3" />
+                <div className="flex items-center">
+                  <Menu size={20} />
                 </div>
               </button>
             ) : (
@@ -82,8 +81,7 @@ const Header: React.FC<HeaderProps> = ({
                 title="Hold to lock sidebar"
               >
                 <div className="flex items-center">
-                  <ChevronLeft size={20} className={`transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''}`} />
-                  <ChevronLeft size={20} className={`transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''} -ml-3`} />
+                  <Menu size={20} />
                 </div>
                 {isHolding && (
                   <div className="absolute left-0 top-0 w-full h-full">
