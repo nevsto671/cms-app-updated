@@ -9,6 +9,7 @@ const RawDataTable: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchField, setSearchField] = useState('all');
   const [selectedField, setSelectedField] = useState<keyof PriceAnalysis>('sin');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [showFilters, setShowFilters] = useState(false);
@@ -50,11 +51,48 @@ const RawDataTable: React.FC = () => {
     return `${value.toFixed(2)}%`;
   };
 
-  const calculateDiscount = (commercialPriceList: number | null | undefined, price: number | null | undefined): number | null => {
-    if (commercialPriceList == null || price == null || commercialPriceList === 0) return null;
+  const searchableFields = [
+    { value: 'all', label: 'All Fields' },
+    { value: 'sin', label: 'SIN' },
+    { value: 'item_number', label: 'Item Number' },
+    { value: 'description', label: 'Description' },
+    { value: 'mfr_name', label: 'Manufacturer Name' },
+    { value: 'mfr_number', label: 'Manufacturer Number' },
+    { value: 'contract_name', label: 'Contract Name' },
+    { value: 'contract_no', label: 'Contract Number' }
+  ];
 
-    const discount = ((commercialPriceList - price) / commercialPriceList) * 100;
-    return Number(discount.toFixed(2));
+  const filterData = (items: PriceAnalysis[]) => {
+    if (!searchTerm) return items;
+
+    return items.filter(item => {
+      const searchValue = searchTerm.toLowerCase();
+
+      if (searchField === 'all') {
+        // Search across all text fields
+        return (
+          item.sin?.toLowerCase().includes(searchValue) ||
+          item.item_number?.toLowerCase().includes(searchValue) ||
+          item.description?.toLowerCase().includes(searchValue) ||
+          item.mfr_name?.toLowerCase().includes(searchValue) ||
+          item.mfr_number?.toLowerCase().includes(searchValue) ||
+          item.contract_name?.toLowerCase().includes(searchValue) ||
+          item.contract_no?.toLowerCase().includes(searchValue) ||
+          item.units_sold_qty?.toString().includes(searchValue) ||
+          item.total_comm_and_proposed_sales?.toString().includes(searchValue) ||
+          item.commercial_price_list?.toString().includes(searchValue) ||
+          item.mfc_price?.toString().includes(searchValue) ||
+          item.tc_price?.toString().includes(searchValue) ||
+          item.proposed_price?.toString().includes(searchValue) ||
+          item.tracking_ratio?.toString().includes(searchValue)
+        );
+      }
+
+      // Search specific field
+      const fieldValue = item[searchField as keyof PriceAnalysis];
+      if (fieldValue === null || fieldValue === undefined) return false;
+      return fieldValue.toString().toLowerCase().includes(searchValue);
+    });
   };
 
   const handleExport = () => {
@@ -92,18 +130,31 @@ const RawDataTable: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const filteredData = filterData(data);
+
   return (
     <div className="space-y-4 -m-4">
       <div className="flex justify-between items-center p-4 bg-white border-b border-gray-200">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+        <div className="flex gap-4 items-center flex-1">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+          </div>
+          <select
+            value={searchField}
+            onChange={(e) => setSearchField(e.target.value)}
+            className="border border-gray-200 rounded-lg p-2"
+          >
+            {searchableFields.map(field => (
+              <option key={field.value} value={field.value}>{field.label}</option>
+            ))}
+          </select>
         </div>
         <div className="flex gap-2">
           <button
@@ -179,14 +230,14 @@ const RawDataTable: React.FC = () => {
                   </div>
                 </td>
               </tr>
-            ) : data.length === 0 ? (
+            ) : filteredData.length === 0 ? (
               <tr>
                 <td colSpan={19} className="px-6 py-4 text-center text-gray-500">
                   No data available
                 </td>
               </tr>
             ) : (
-              data.map((item) => (
+              filteredData.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.sin}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.item_number}</td>
