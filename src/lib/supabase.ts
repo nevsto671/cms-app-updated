@@ -82,6 +82,38 @@ async function handleSignOut() {
   }
 }
 
+// Verify and refresh session if needed
+export async function verifySession() {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error || !session) {
+      await handleSignOut();
+      return false;
+    }
+
+    // Check if token is about to expire (within 5 minutes)
+    const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+    const fiveMinutes = 5 * 60 * 1000;
+    
+    if (Date.now() + fiveMinutes >= expiresAt) {
+      const { data: { session: refreshedSession }, error: refreshError } = 
+        await supabase.auth.refreshSession();
+      
+      if (refreshError || !refreshedSession) {
+        await handleSignOut();
+        return false;
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Session verification error:', error);
+    await handleSignOut();
+    return false;
+  }
+}
+
 // Initialize auth state
 async function initializeAuth() {
   try {

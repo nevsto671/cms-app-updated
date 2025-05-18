@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, AlertCircle, Download } from 'lucide-react';
 import Papa from 'papaparse';
-import { supabase } from '../../lib/supabase';
+import { supabase, verifySession } from '../../lib/supabase';
 import { calculateDiscountPercentage, calculateTotalCommercialSales, isProposedPriceLteMfc } from '../../utils/calculations';
 
 interface ImportStatus {
@@ -217,6 +217,12 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
   };
 
   const processImport = async (items: any[]) => {
+    // Verify session is valid before starting import
+    const isSessionValid = await verifySession();
+    if (!isSessionValid) {
+      throw new Error('Your session has expired. Please refresh the page to continue.');
+    }
+
     // Get the current user's ID
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
@@ -252,6 +258,14 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
         }
 
         try {
+          // Verify session is still valid periodically (every 50 items)
+          if (i % 50 === 0) {
+            const isStillValid = await verifySession();
+            if (!isStillValid) {
+              throw new Error('Your session has expired. Please refresh the page to continue.');
+            }
+          }
+
           validateRow(items[i], i);
 
           const { error: insertError } = await supabase
@@ -262,12 +276,22 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
               created_by: user.id
             });
 
-          if (insertError) throw insertError;
+          if (insertError) {
+            if (insertError.message.includes('JWT')) {
+              throw new Error('Your session has expired. Please refresh the page to continue.');
+            }
+            throw insertError;
+          }
 
           status.successful++;
         } catch (err) {
           console.error('Import error:', err);
           status.failed++;
+          
+          // If it's a session error, stop the import
+          if (err.message.includes('session has expired')) {
+            throw err;
+          }
         }
         
         status.processed++;
@@ -298,6 +322,12 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     importCancelledRef.current = false;
 
     try {
+      // Verify session is valid before starting import
+      const isSessionValid = await verifySession();
+      if (!isSessionValid) {
+        throw new Error('Your session has expired. Please refresh the page to continue.');
+      }
+
       // Parse CSV file
       Papa.parse(file, {
         header: true,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Filter, Download, ArrowUp, ArrowDown, RefreshCw, AlertCircle } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase, verifySession } from '../../lib/supabase';
 import { PriceAnalysis } from '../../types/catalog';
 import Papa from 'papaparse';
 
@@ -28,13 +28,25 @@ const RawDataTable: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Verify session is valid before fetching data
+      const isSessionValid = await verifySession();
+      if (!isSessionValid) {
+        throw new Error('Your session has expired. Please refresh the page to continue.');
+      }
       
       const { data: priceData, error: fetchError } = await supabase
         .from('price_analysis')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        if (fetchError.message.includes('JWT')) {
+          throw new Error('Your session has expired. Please refresh the page to continue.');
+        }
+        throw fetchError;
+      }
+      
       setData(priceData || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
@@ -111,39 +123,49 @@ const RawDataTable: React.FC = () => {
     });
   };
 
-  const handleExport = () => {
-    const exportData = data.map(item => ({
-      'SIN': item.sin,
-      'Item Number': item.item_number,
-      'Description': item.description,
-      'Manufacturer Name': item.mfr_name,
-      'Manufacturer Number': item.mfr_number,
-      'Units Sold': item.units_sold_qty,
-      'Total Comm. & Proposed Sales': formatCurrency(item.total_comm_and_proposed_sales),
-      'Total Commercial Sales': formatCurrency(item.total_commercial_sales),
-      'Commercial Price List': formatCurrency(item.commercial_price_list),
-      'MFC Price': formatCurrency(item.mfc_price),
-      'MFC Discount': formatPercentage(item.mfc_discount),
-      'TC Price': formatCurrency(item.tc_price),
-      'TC Discount': formatPercentage(item.tc_discount),
-      'TC Total Sales': formatCurrency(item.tc_total_sales),
-      'Proposed Total Sales': formatCurrency(item.proposed_total_sales),
-      'Proposed Price': formatCurrency(item.proposed_price),
-      'Proposed Discount': formatPercentage(item.proposed_discount),
-      'Unfavorable Pricing': item.is_proposed_price_lte_mfc === 'NO' ? 'Yes' : 'No',
-      'Tracking Ratio': item.tracking_ratio?.toFixed(2) || '-'
-    }));
+  const handleExport = async () => {
+    try {
+      // Verify session before exporting
+      const isSessionValid = await verifySession();
+      if (!isSessionValid) {
+        throw new Error('Your session has expired. Please refresh the page to continue.');
+      }
 
-    const csv = Papa.unparse(exportData);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `price_analysis_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      const exportData = data.map(item => ({
+        'SIN': item.sin,
+        'Item Number': item.item_number,
+        'Description': item.description,
+        'Manufacturer Name': item.mfr_name,
+        'Manufacturer Number': item.mfr_number,
+        'Units Sold': item.units_sold_qty,
+        'Total Comm. & Proposed Sales': formatCurrency(item.total_comm_and_proposed_sales),
+        'Total Commercial Sales': formatCurrency(item.total_commercial_sales),
+        'Commercial Price List': formatCurrency(item.commercial_price_list),
+        'MFC Price': formatCurrency(item.mfc_price),
+        'MFC Discount': formatPercentage(item.mfc_discount),
+        'TC Price': formatCurrency(item.tc_price),
+        'TC Discount': formatPercentage(item.tc_discount),
+        'TC Total Sales': formatCurrency(item.tc_total_sales),
+        'Proposed Total Sales': formatCurrency(item.proposed_total_sales),
+        'Proposed Price': formatCurrency(item.proposed_price),
+        'Propose Discount': formatPercentage(item.proposed_discount),
+        'Unfavorable Pricing': item.is_proposed_price_lte_mfc === 'NO' ? 'Yes' : 'No',
+        'Tracking Ratio': item.tracking_ratio?.toFixed(2) || '-'
+      }));
+
+      const csv = Papa.unparse(exportData);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `price_analysis_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export data');
+    }
   };
 
   const filteredData = filterData(data);
