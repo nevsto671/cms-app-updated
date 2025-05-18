@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { AlertCircle, Bell, X } from 'lucide-react';
 
 const AnalysisDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [showNotification, setShowNotification] = useState(true);
 
-  // Mock data - replace with real data from your API/database
   const overviewData = {
     totalCommAndProposedSales: 18234920,
     commercialTotalSales: 13959200,
@@ -35,9 +36,42 @@ const AnalysisDashboard: React.FC = () => {
     }).format(value);
   };
 
+  const highZeroSalesManufacturers = manufacturersData
+    .filter(m => (m.zeroSales / m.items) * 100 > 15)
+    .map(m => ({
+      name: m.name,
+      percentage: ((m.zeroSales / m.items) * 100).toFixed(1)
+    }));
+
   return (
     <div>
-      {/* Tabs */}
+      {showNotification && highZeroSalesManufacturers.length > 0 && (
+        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-amber-400" />
+              <div className="ml-3">
+                <p className="text-sm text-amber-700">
+                  <span className="font-medium">Attention needed:</span>{' '}
+                  {highZeroSalesManufacturers.length} manufacturer(s) have high zero commercial sales rates
+                </p>
+                <ul className="mt-1 text-sm text-amber-600">
+                  {highZeroSalesManufacturers.map(m => (
+                    <li key={m.name}>• {m.name}: {m.percentage}% items with zero sales</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowNotification(false)}
+              className="ml-4 text-amber-400 hover:text-amber-500"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white border-b border-gray-200">
         <nav className="flex space-x-4 px-4">
           <button
@@ -65,7 +99,6 @@ const AnalysisDashboard: React.FC = () => {
 
       {activeTab === 'overview' && (
         <>
-          {/* Overview Card */}
           <div className="bg-white">
             <h2 className="text-xl font-semibold text-gray-900 p-4 border-b border-gray-200">Proposed Offer Overview</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
@@ -148,7 +181,6 @@ const AnalysisDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Manufacturers Summary */}
           <div className="bg-white mt-4">
             <h2 className="text-xl font-semibold text-gray-900 p-4 border-b border-gray-200">Manufacturers Summary</h2>
             <div className="overflow-x-auto">
@@ -210,9 +242,16 @@ const AnalysisDashboard: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {manufacturersData.map((manufacturer) => (
-                  <tr key={manufacturer.name}>
+                  <tr key={manufacturer.name} className={
+                    (manufacturer.zeroSales / manufacturer.items) * 100 > 15 
+                      ? 'bg-amber-50'
+                      : ''
+                  }>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {manufacturer.name}
+                      {(manufacturer.zeroSales / manufacturer.items) * 100 > 15 && (
+                        <AlertCircle className="inline-block ml-2 h-4 w-4 text-amber-500" />
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {manufacturer.items}
