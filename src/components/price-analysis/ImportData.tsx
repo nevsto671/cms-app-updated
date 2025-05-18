@@ -155,6 +155,13 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   };
 
   const processImport = async (data: any[]) => {
+    // Get the current user's ID
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      throw new Error('You must be logged in to import data');
+    }
+
     const batchId = new Date().getTime().toString();
     const status: ImportStatus = {
       total: data.length,
@@ -195,7 +202,8 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
           .from('price_analysis')
           .insert({
             ...processedRow,
-            upload_batch_id: batchId
+            upload_batch_id: batchId,
+            created_by: user.id // Set the created_by field to the current user's ID
           });
 
         if (insertError) throw insertError;
