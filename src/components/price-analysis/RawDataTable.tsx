@@ -8,25 +8,22 @@ const RawDataTable: React.FC = () => {
   const [data, setData] = useState<PriceAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortField, setSortField] = useState<keyof PriceAnalysis>('sin');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedField, setSelectedField] = useState<keyof PriceAnalysis>('sin');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [showFilters, setShowFilters] = useState(false);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
       const { data: priceData, error: fetchError } = await supabase
         .from('price_analysis')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
-
       setData(priceData || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
@@ -34,6 +31,16 @@ const RawDataTable: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Fetch data on mount and set up refresh interval
+  useEffect(() => {
+    fetchData();
+    
+    // Refresh data every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const formatCurrency = (value: number | null | undefined): string => {
     if (value === null || value === undefined) return '-';
@@ -50,10 +57,10 @@ const RawDataTable: React.FC = () => {
   };
 
   const handleSort = (field: keyof PriceAnalysis) => {
-    if (sortField === field) {
+    if (selectedField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortField(field);
+      setSelectedField(field);
       setSortDirection('asc');
     }
   };
@@ -93,14 +100,6 @@ const RawDataTable: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  if (error) {
-    return (
-      <div className="p-4 bg-red-50 text-red-700 rounded-lg">
-        Error loading data: {error}
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -123,18 +122,38 @@ const RawDataTable: React.FC = () => {
           >
             <Filter size={20} />
           </button>
-          <button 
+          <button
             onClick={handleExport}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
           >
             <Download size={16} />
             Export Data
           </button>
+          <button
+            onClick={fetchData}
+            className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+          >
+            <RefreshCw size={16} />
+            Refresh
+          </button>
         </div>
       </div>
 
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <RefreshCw className="h-5 w-5 text-red-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full">
           <thead className="bg-gray-50">
             <tr>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
