@@ -1,14 +1,34 @@
 import React, { useState, useRef } from 'react';
 import { Search, Filter, Download, ArrowUp, ArrowDown, Upload, X } from 'lucide-react';
 import Papa from 'papaparse';
-import { PriceAnalysis } from '../../types/catalog';
 
-const mockData: PriceAnalysis[] = [
+interface PriceData {
+  sin: string;
+  itemNumber: string; 
+  description: string;
+  mfrName: string;
+  mfrNumber: string;
+  unitsSoldQty: number;
+  totalCommAndProposedSales: number;
+  totalCommercialSales: number;
+  commercialPriceList: number;
+  mfcPrice: number;
+  mfcDiscount: number;
+  tcPrice: number | null;
+  tcDiscount: number | null;
+  tcTotalSales: number | null;
+  proposedPrice: number;
+  proposedDiscount: number;
+  isProposedPriceLteMfc: 'YES' | 'NO' | null;
+  proposedTotalSales: number;
+  trackingRatio: number;
+}
+
+const mockData: PriceData[] = [
   {
-    id: '1',
     sin: 'L39',
     itemNumber: 'IT-001',
-    description: 'High-performance laptop with Intel Core i7, 16GB RAM, 512GB SSD',
+    description: 'Dell Latitude 5420 Laptop, Intel Core i7-1185G7, 16GB RAM, 512GB SSD',
     mfrName: 'Dell Technologies',
     mfrNumber: 'LAT-5420-i7-16-512',
     unitsSoldQty: 150,
@@ -24,17 +44,12 @@ const mockData: PriceAnalysis[] = [
     proposedDiscount: 39.01,
     isProposedPriceLteMfc: 'YES',
     proposedTotalSales: 615000,
-    trackingRatio: 1.64,
-    createdDate: new Date('2025-03-15'),
-    updatedDate: new Date('2025-03-15'),
-    uploadBatchId: 'BATCH001',
-    createdBy: 'system'
+    trackingRatio: 1.64
   },
   {
-    id: '2',
     sin: 'L40',
     itemNumber: 'IT-002',
-    description: 'Professional workstation with dual monitors and docking station',
+    description: 'HP Z4 G4 Workstation, Intel Xeon W-2245, 64GB RAM, 2TB SSD',
     mfrName: 'HP Inc.',
     mfrNumber: 'WS-8560-DUAL',
     unitsSoldQty: 75,
@@ -43,34 +58,30 @@ const mockData: PriceAnalysis[] = [
     commercialPriceList: 7121.00,
     mfcPrice: 5911.00,
     mfcDiscount: 16.99,
-    tcPrice: 6000.00,
-    tcDiscount: 15.74,
-    tcTotalSales: 450000,
+    tcPrice: null,
+    tcDiscount: null,
+    tcTotalSales: null,
     proposedPrice: 5657.00,
     proposedDiscount: 20.56,
     isProposedPriceLteMfc: 'NO',
     proposedTotalSales: 424275,
-    trackingRatio: 1.26,
-    createdDate: new Date('2025-03-15'),
-    updatedDate: new Date('2025-03-15'),
-    uploadBatchId: 'BATCH001',
-    createdBy: 'system'
+    trackingRatio: 1.26
   }
 ];
 
 const RawDataTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<keyof PriceAnalysis>('description');
+  const [sortField, setSortField] = useState<keyof PriceData>('description');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSIN, setSelectedSIN] = useState('All');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
-  const [data, setData] = useState<PriceAnalysis[]>(mockData);
+  const [data, setData] = useState<PriceData[]>(mockData);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSort = (field: keyof PriceAnalysis) => {
+  const handleSort = (field: keyof PriceData) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -127,15 +138,13 @@ const RawDataTable: React.FC = () => {
           commercialPriceList: parseFloat(row.commercialPriceList || '0'),
           mfcPrice: parseFloat(row.mfcPrice || '0'),
           mfcDiscount: parseFloat(row.mfcDiscount || '0'),
-          tcPrice: parseFloat(row.tcPrice || '0'),
-          tcDiscount: parseFloat(row.tcDiscount || '0'),
-          tcTotalSales: parseFloat(row.tcTotalSales || '0'),
+          tcPrice: row.tcPrice ? parseFloat(row.tcPrice) : null,
+          tcDiscount: row.tcDiscount ? parseFloat(row.tcDiscount) : null,
+          tcTotalSales: row.tcTotalSales ? parseFloat(row.tcTotalSales) : null,
           proposedPrice: parseFloat(row.proposedPrice || '0'),
           proposedDiscount: parseFloat(row.proposedDiscount || '0'),
           proposedTotalSales: parseFloat(row.proposedTotalSales || '0'),
-          trackingRatio: parseFloat(row.trackingRatio || '0'),
-          createdDate: new Date(row.createdDate),
-          updatedDate: new Date(row.updatedDate)
+          trackingRatio: parseFloat(row.trackingRatio || '0')
         }));
         setData(parsedData);
         setShowUploadModal(false);
@@ -145,7 +154,6 @@ const RawDataTable: React.FC = () => {
 
   const downloadTemplate = () => {
     const templateData = [{
-      id: 'EXAMPLE-001',
       sin: 'L39',
       itemNumber: 'IT-XXX',
       description: 'Example Product',
@@ -296,49 +304,49 @@ const RawDataTable: React.FC = () => {
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 Description
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 Mfr. Name
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 Mfr. Item #
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 Sold Units
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 Total Comm. & Proposed Sales
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 Total Commercial Sales
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 Commercial Price List
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 MFC Price
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 MFC Discount
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 TC Price
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 TC Discount
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 TC Total Sales
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 Proposed Price
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 Proposed Discount
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 Proposed Total Sales
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                 Tracking Ratio
               </th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -348,55 +356,23 @@ const RawDataTable: React.FC = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredData.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50">
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{item.description}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{item.mfrName}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm font-mono text-gray-900">{item.mfrNumber}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{item.unitsSoldQty.toLocaleString()}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{formatCurrency(item.totalCommAndProposedSales)}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{formatCurrency(item.totalCommercialSales)}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{formatCurrency(item.commercialPriceList)}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{formatCurrency(item.mfcPrice)}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{item.mfcDiscount.toFixed(2)}%</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{item.tcPrice ? formatCurrency(item.tcPrice) : '-'}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{item.tcDiscount ? `${item.tcDiscount.toFixed(2)}%` : '-'}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{item.tcTotalSales ? formatCurrency(item.tcTotalSales) : '-'}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{formatCurrency(item.proposedPrice)}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{item.proposedDiscount.toFixed(2)}%</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{item.proposedTotalSales ? formatCurrency(item.proposedTotalSales) : '-'}</div>
-                </td>
-                <td className="px-3 py-4">
-                  <div className="text-sm text-gray-900">{item.trackingRatio.toFixed(2)}</div>
-                </td>
+              <tr key={item.itemNumber} className="hover:bg-gray-50">
+                <td className="px-3 py-4 text-sm text-gray-900">{item.description}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{item.mfrName}</td>
+                <td className="px-3 py-4 text-sm font-mono text-gray-900">{item.mfrNumber}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{item.unitsSoldQty.toLocaleString()}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{formatCurrency(item.totalCommAndProposedSales)}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{formatCurrency(item.totalCommercialSales)}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{formatCurrency(item.commercialPriceList)}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{formatCurrency(item.mfcPrice)}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{item.mfcDiscount.toFixed(2)}%</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{item.tcPrice ? formatCurrency(item.tcPrice) : '-'}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{item.tcDiscount ? `${item.tcDiscount.toFixed(2)}%` : '-'}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{item.tcTotalSales ? formatCurrency(item.tcTotalSales) : '-'}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{formatCurrency(item.proposedPrice)}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{item.proposedDiscount.toFixed(2)}%</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{formatCurrency(item.proposedTotalSales)}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{item.trackingRatio.toFixed(2)}</td>
                 <td className="px-3 py-4">
                   <div className="flex gap-2">
                     <button className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded border border-blue-200 hover:bg-blue-100">
