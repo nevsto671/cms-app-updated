@@ -6,7 +6,7 @@ import { Database, Trash2, Download, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const PriceAnalysis: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'raw' | 'analysis' | 'import' | 'manage'>('raw');
+  const [activeTab, setActiveTab] = useState<'analysis' | 'raw' | 'import' | 'manage'>('analysis');
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,17 +74,6 @@ const PriceAnalysis: React.FC = () => {
       <div className="border-b border-gray-200">
         <nav className="flex space-x-8">
           <button
-            onClick={() => setActiveTab('raw')}
-            className={`py-4 px-1 inline-flex items-center space-x-2 border-b-2 font-medium text-sm ${
-              activeTab === 'raw'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Raw Data
-          </button>
-
-          <button
             onClick={() => setActiveTab('analysis')}
             className={`py-4 px-1 inline-flex items-center space-x-2 border-b-2 font-medium text-sm ${
               activeTab === 'analysis'
@@ -93,6 +82,17 @@ const PriceAnalysis: React.FC = () => {
             }`}
           >
             Analysis Dashboard
+          </button>
+
+          <button
+            onClick={() => setActiveTab('raw')}
+            className={`py-4 px-1 inline-flex items-center space-x-2 border-b-2 font-medium text-sm ${
+              activeTab === 'raw'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Raw Data
           </button>
 
           <button
@@ -122,10 +122,10 @@ const PriceAnalysis: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-4">
-          {activeTab === 'raw' ? (
-            <RawDataTable />
-          ) : activeTab === 'analysis' ? (
+          {activeTab === 'analysis' ? (
             <AnalysisDashboard />
+          ) : activeTab === 'raw' ? (
+            <RawDataTable />
           ) : activeTab === 'import' ? (
             <ImportData onComplete={handleImportComplete} />
           ) : (
