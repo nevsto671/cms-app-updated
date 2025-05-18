@@ -22,6 +22,7 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<ImportStatus | null>(null);
+  const [itemCount, setItemCount] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [cancelImport, setCancelImport] = useState(false);
@@ -38,8 +39,43 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     };
   }, []);
 
+  // Count items in CSV when file is selected
+  useEffect(() => {
+    if (file) {
+      countItemsInFile();
+    } else {
+      setItemCount(null);
+    }
+  }, [file]);
+
+  const countItemsInFile = () => {
+    if (!file) return;
+    
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      preview: 0, // Just get header info
+      complete: (results) => {
+        // Get line count from file
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            const content = e.target.result as string;
+            const lines = content.split('\n').filter(line => line.trim().length > 0);
+            // Subtract 1 for header row
+            const count = Math.max(0, lines.length - 1);
+            setItemCount(count);
+          }
+        };
+        reader.readAsText(file);
+      }
+    });
+  };
+
   const calculateTimeRemaining = (processed: number, total: number, startTime: number): string => {
     const elapsedTime = Date.now() - startTime;
+    if (processed === 0) return 'Calculating...';
+    
     const processedPerMs = processed / elapsedTime;
     const remainingItems = total - processed;
     const estimatedRemainingMs = remainingItems / processedPerMs;
@@ -289,7 +325,7 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
           status.failed++;
           
           // If it's a session error, stop the import
-          if (err.message.includes('session has expired')) {
+          if (err.message && err.message.includes('session has expired')) {
             throw err;
           }
         }
@@ -437,6 +473,12 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
                 <X size={16} className="text-gray-500" />
               </button>
             </div>
+            
+            {itemCount !== null && (
+              <div className="text-sm text-gray-600">
+                File contains {itemCount.toLocaleString()} items
+              </div>
+            )}
             
             <button
               onClick={handleImport}
