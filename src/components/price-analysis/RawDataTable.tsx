@@ -67,7 +67,7 @@ const RawDataTable: React.FC = () => {
       'Units Sold': item.unitsSoldQty,
       'Total Comm. & Proposed Sales': item.totalCommAndProposedSales,
       'Total Commercial Sales': item.totalCommAndProposedSales - (item.proposedTotalSales || 0),
-      'Commercial Price': item.commercialPriceList,
+      'Commercial Price List': item.commercialPriceList,
       'MFC Price': item.mfcPrice,
       'MFC Discount': item.mfcDiscount,
       'TC Price': item.tcPrice,
@@ -161,7 +161,7 @@ const RawDataTable: React.FC = () => {
                 Total Comm Sales
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Commercial Price
+                Commercial Price List
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 MFC Price
