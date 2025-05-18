@@ -9,6 +9,8 @@ interface ImportStatus {
   processed: number;
   successful: number;
   failed: number;
+  estimatedTimeRemaining: string;
+  startTime?: number;
 }
 
 interface ImportDataProps {
@@ -35,6 +37,17 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
       }
     };
   }, []);
+
+  const calculateTimeRemaining = (processed: number, total: number, startTime: number): string => {
+    const elapsedTime = Date.now() - startTime;
+    const processedPerMs = processed / elapsedTime;
+    const remainingItems = total - processed;
+    const estimatedRemainingMs = remainingItems / processedPerMs;
+
+    if (estimatedRemainingMs < 1000) return 'Less than a second';
+    if (estimatedRemainingMs < 60000) return `${Math.round(estimatedRemainingMs / 1000)} seconds`;
+    return `${Math.round(estimatedRemainingMs / 60000)} minutes`;
+  };
 
   const CSV_HEADERS = [
     'sin',
@@ -212,11 +225,14 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
     }
 
     const batchId = new Date().getTime().toString();
+    const startTime = Date.now();
     const status: ImportStatus = {
       total: items.length,
       processed: 0,
       successful: 0,
-      failed: 0
+      failed: 0,
+      estimatedTimeRemaining: 'Calculating...',
+      startTime
     };
 
     // Reset cancel flag
@@ -255,6 +271,7 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
         }
         
         status.processed++;
+        status.estimatedTimeRemaining = calculateTimeRemaining(status.processed, status.total, startTime);
         setStatus({ ...status });
 
         // Add a small delay to allow UI updates and cancellation checks
@@ -433,9 +450,14 @@ const ImportData: React.FC<ImportDataProps> = ({ onComplete }) => {
         <div className="mt-4 p-4 bg-gray-50 rounded-lg">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-medium text-gray-800">Import Progress</h3>
-            <span className="text-sm text-gray-600">
-              {status.processed} of {status.total} items
-            </span>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">
+                {status.processed} of {status.total} items
+              </span>
+              <span className="text-sm text-blue-600">
+                Est. time remaining: {status.estimatedTimeRemaining}
+              </span>
+            </div>
           </div>
           
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
