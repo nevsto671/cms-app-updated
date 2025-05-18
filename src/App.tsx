@@ -22,14 +22,6 @@ import PriceAnalysis from './pages/PriceAnalysis';
 import { supabase } from './lib/supabase';
 import './App.css';
 
-interface AuthSubscription {
-  data: {
-    subscription: {
-      unsubscribe: () => void;
-    };
-  };
-}
-
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -38,7 +30,6 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    let authListener: AuthSubscription | null = null;
 
     const initializeAuth = async () => {
       try {
@@ -82,27 +73,20 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     // Set up auth state listener
-    const setupAuthListener = async () => {
-      const { data } = await supabase.auth.onAuthStateChange(async (event, session) => {
-        if (!mounted) return;
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
 
-        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-          setIsAuthenticated(false);
-          navigate('/login');
-        } else if (event === 'SIGNED_IN' && session) {
-          setIsAuthenticated(true);
-        }
-      });
-
-      authListener = data as AuthSubscription;
-    };
-
-    setupAuthListener();
+      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        setIsAuthenticated(false);
+        navigate('/login');
+      } else if (event === 'SIGNED_IN' && session) {
+        setIsAuthenticated(true);
+      }
+    });
 
     return () => {
       mounted = false;
-      // Safely unsubscribe using optional chaining
-      authListener?.data?.subscription?.unsubscribe?.();
+      data?.subscription?.unsubscribe?.();
     };
   }, [navigate]);
 

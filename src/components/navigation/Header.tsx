@@ -81,7 +81,7 @@ const Header: React.FC<HeaderProps> = ({
                 title="Hold to lock sidebar"
               >
                 <div className="flex items-center">
-                  <Menu size={20} />
+                  <Menu size={20}/>
                 </div>
                 {isHolding && (
                   <div className="absolute left-0 top-0 w-full h-full">
