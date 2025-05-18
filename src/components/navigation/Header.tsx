@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Settings, Menu, HelpCircle, LogOut, Info, ChevronLeft, Lock } from 'lucide-react';
+import { Search, Settings, Menu, HelpCircle, LogOut, Info, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 
@@ -55,10 +55,6 @@ const Header: React.FC<HeaderProps> = ({
               >
                 <ChevronLeft size={20} />
                 <ChevronLeft size={20} className="-ml-3" />
-                <Lock 
-                  size={14} 
-                  className="ml-1 text-blue-400 animate-pulse" 
-                />
               </button>
             ) : (
               <button
@@ -74,10 +70,6 @@ const Header: React.FC<HeaderProps> = ({
                 {isHolding && (
                   <div className="absolute left-0 top-0 w-full h-full">
                     <div className="absolute left-0 top-0 w-full h-full bg-blue-500 opacity-20 rounded transition-all duration-1000 animate-pulse" />
-                    <Lock 
-                      size={14} 
-                      className="absolute right-0 top-1/2 transform -translate-y-1/2 text-blue-400 animate-pulse" 
-                    />
                   </div>
                 )}
               </button>
