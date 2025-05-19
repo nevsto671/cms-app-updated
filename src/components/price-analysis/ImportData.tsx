@@ -13,7 +13,11 @@ interface ImportStatus {
   startTime?: number;
   processingSpeed?: number; // Items per second
   batchSize?: number;
-  errors?: string[];
+  errors?: Array<{
+    row: number;
+    message: string;
+    data?: Record<string, any>;
+  }>;
 }
 
 const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
@@ -194,7 +198,8 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     }
   };
 
-  const validateRow = (row: any, rowIndex: number): boolean => {
+  const validateRow = (row: any, rowIndex: number): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
     const requiredFields = [
       'sin',
       'item_number',
@@ -216,13 +221,8 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
 
     // Check required fields
     for (const field of requiredFields) {
-      if (!row[field] || row[field].trim() === '') {
-        const errorMessage = `Row ${rowIndex + 1}: Missing or empty required field: ${field}. Please ensure all required fields have values.`;
-        setStatus(prev => ({
-          ...prev!,
-          errors: [...(prev?.errors || []), errorMessage]
-        }));
-        throw new Error(errorMessage);
+      if (!row[field] || String(row[field]).trim() === '') {
+        errors.push(`Missing or empty required field: ${field}`);
       }
     }
 
@@ -233,24 +233,19 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       }
     });
 
-    // Validate and convert numeric fields
+    // Validate numeric fields
     for (const field of numericFields) {
       if (row[field]) {
         // Remove any currency symbols, commas and whitespace
-        const cleanValue = row[field].toString().replace(/[$,\s]/g, '');
+        const cleanValue = String(row[field]).replace(/[$,\s]/g, '');
         const numValue = parseFloat(cleanValue);
         
         if (isNaN(numValue)) {
-          const errorMessage = `Row ${rowIndex + 1}: Invalid numeric value for ${field}: ${row[field]}. Please ensure the value is a valid number.`;
-          setStatus(prev => ({
-            ...prev!,
-            errors: [...(prev?.errors || []), errorMessage]
-          }));
-          throw new Error(errorMessage);
+          errors.push(`Invalid numeric value for ${field}: ${row[field]}`);
+        } else {
+          // Update the row with the cleaned numeric value
+          row[field] = numValue;
         }
-        
-        // Update the row with the cleaned numeric value
-        row[field] = numValue;
       }
     }
 
@@ -275,12 +270,7 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
 
       // Validate the calculated value
       if (row.total_commercial_sales < 0) {
-        const errorMessage = `Row ${rowIndex + 1}: Total commercial sales cannot be negative (${row.total_commercial_sales}). Please check your input values.`;
-        setStatus(prev => ({
-          ...prev!,
-          errors: [...(prev?.errors || []), errorMessage]
-        }));
-        throw new Error(errorMessage);
+        errors.push(`Total commercial sales cannot be negative (${row.total_commercial_sales})`);
       }
     }
 
@@ -291,7 +281,10 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       row.is_proposed_price_lte_mfc = 'NO'; // Default value if either price is missing
     }
 
-    return true;
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
   };
 
   const processImport = async (items: any[]) => {
@@ -359,16 +352,22 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         
         // Validate each item in the batch
         for (let j = 0; j < batch.length; j++) {
-          try {
-            validateRow(batch[j], i + j);
+          const rowIndex = i + j;
+          const validation = validateRow(batch[j], rowIndex);
+          
+          if (validation.isValid) {
             validBatch.push({
               ...batch[j],
               upload_batch_id: batchId,
               created_by: user.id
             });
-          } catch (err) {
-            console.error('Validation error:', err);
+          } else {
             status.failed++;
+            status.errors?.push({
+              row: rowIndex + 1, // Add 1 to account for header row
+              message: validation.errors.join('; '),
+              data: batch[j]
+            });
           }
         }
 
@@ -384,6 +383,10 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             }
             console.error('Insert error:', insertError);
             status.failed += validBatch.length;
+            status.errors?.push({
+              row: -1,
+              message: `Database error: ${insertError.message}`
+            });
           } else {
             status.successful += validBatch.length;
           }
@@ -630,19 +633,23 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
           {status.errors && status.errors.length > 0 && (
             <div className="mt-4 p-4 bg-red-50 rounded-lg">
               <h4 className="text-sm font-medium text-red-800 mb-2">Import Errors:</h4>
-              <ul className="text-sm text-red-700 space-y-1">
-                {status.errors.slice(0, 5).map((error, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <AlertCircle size={14} className="mt-1 flex-shrink-0" />
-                    <span>{error}</span>
-                  </li>
-                ))}
-                {status.errors.length > 5 && (
-                  <li className="text-red-600 font-medium">
-                    ...and {status.errors.length - 5} more errors
-                  </li>
-                )}
-              </ul>
+              <div className="max-h-60 overflow-y-auto">
+                <ul className="text-sm text-red-700 space-y-2">
+                  {status.errors.map((error, index) => (
+                    <li key={index} className="flex items-start gap-2 p-2 bg-red-100/50 rounded">
+                      <AlertCircle size={14} className="mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Row {error.row}:</strong> {error.message}
+                        {error.data && (
+                          <pre className="mt-1 text-xs bg-red-100 p-2 rounded overflow-x-auto">
+                            {JSON.stringify(error.data, null, 2)}
+                          </pre>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
 
