@@ -43,20 +43,47 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         if (e.target?.result) {
-          Papa.parse(e.target.result as string, {
+          // Count the number of rows in the CSV file
+          const content = e.target.result as string;
+          const lineCount = content.split('\n').length - 1; // Subtract 1 for header row
+          
+          // Parse a small sample to verify it's valid CSV and get actual row count
+          Papa.parse(content, {
             header: true,
             skipEmptyLines: true,
+            preview: 10, // Just check a few rows to validate format
             complete: (results) => {
-              const rowCount = results.data.length;
-              setTotalRows(rowCount);
+              if (results.errors.length > 0) {
+                setError(`CSV validation error: ${results.errors[0].message}`);
+                return;
+              }
               
-              // Dynamically adjust batch size based on total rows
-              let batchSize = 50; // Default batch size
-              if (rowCount > 10000) batchSize = 100;
-              if (rowCount > 50000) batchSize = 200;
-              if (rowCount > 100000) batchSize = 500;
-              
-              setStatus(prev => prev ? { ...prev, batchSize } : null);
+              // Now count all rows
+              Papa.parse(content, {
+                header: true,
+                skipEmptyLines: true,
+                complete: (fullResults) => {
+                  const rowCount = fullResults.data.length;
+                  setTotalRows(rowCount);
+                  
+                  // Dynamically adjust batch size based on total rows
+                  let batchSize = 50; // Default batch size
+                  if (rowCount > 1000) batchSize = 100;
+                  if (rowCount > 5000) batchSize = 200;
+                  if (rowCount > 10000) batchSize = 500;
+                  
+                  console.log(`File contains ${rowCount} rows. Using batch size: ${batchSize}`);
+                  
+                  setStatus(prev => prev ? { ...prev, batchSize } : { 
+                    total: rowCount,
+                    processed: 0,
+                    successful: 0,
+                    failed: 0,
+                    estimatedTimeRemaining: 'Calculating...',
+                    batchSize
+                  });
+                }
+              });
             }
           });
         }
@@ -64,6 +91,7 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       reader.readAsText(file);
     } else {
       setTotalRows(0);
+      setStatus(null);
     }
   }, [file]);
 
@@ -500,7 +528,7 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             </div>
             
             {totalRows > 0 && (
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600 font-medium bg-yellow-100 py-2 px-4 rounded-lg inline-block">
                 File contains {totalRows.toLocaleString()} items
               </div>
             )}
