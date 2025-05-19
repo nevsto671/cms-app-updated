@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Upload, X, AlertCircle, Download } from 'lucide-react';
 import Papa from 'papaparse';
 import { supabase, verifySession } from '../../lib/supabase';
@@ -11,6 +11,8 @@ interface ImportStatus {
   failed: number;
   estimatedTimeRemaining: string;
   startTime?: number;
+  processingSpeed?: number; // Items per second
+  batchSize?: number;
 }
 
 const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
@@ -35,7 +37,7 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     };
   }, []);
 
-  // Count rows when file is selected
+  // Count rows and determine optimal batch size when file is selected
   useEffect(() => {
     if (file) {
       const reader = new FileReader();
@@ -45,7 +47,16 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             header: true,
             skipEmptyLines: true,
             complete: (results) => {
-              setTotalRows(results.data.length);
+              const rowCount = results.data.length;
+              setTotalRows(rowCount);
+              
+              // Dynamically adjust batch size based on total rows
+              let batchSize = 50; // Default batch size
+              if (rowCount > 10000) batchSize = 100;
+              if (rowCount > 50000) batchSize = 200;
+              if (rowCount > 100000) batchSize = 500;
+              
+              setStatus(prev => prev ? { ...prev, batchSize } : null);
             }
           });
         }
@@ -56,17 +67,19 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     }
   }, [file]);
 
-  const calculateTimeRemaining = (processed: number, total: number, startTime: number): string => {
+  const calculateTimeRemaining = (processed: number, total: number, startTime: number, processingSpeed?: number): string => {
     const elapsedTime = Date.now() - startTime;
     if (processed === 0) return 'Calculating...';
     
-    const processedPerMs = processed / elapsedTime;
+    // Calculate current processing speed if not provided
+    const currentSpeed = processingSpeed || (processed / (elapsedTime / 1000));
     const remainingItems = total - processed;
-    const estimatedRemainingMs = remainingItems / processedPerMs;
+    const estimatedRemainingSeconds = remainingItems / currentSpeed;
 
-    if (estimatedRemainingMs < 1000) return 'Less than a second';
-    if (estimatedRemainingMs < 60000) return `${Math.round(estimatedRemainingMs / 1000)} seconds`;
-    return `${Math.round(estimatedRemainingMs / 60000)} minutes`;
+    if (estimatedRemainingSeconds < 1) return 'Less than a second';
+    if (estimatedRemainingSeconds < 60) return `${Math.round(estimatedRemainingSeconds)} seconds`;
+    if (estimatedRemainingSeconds < 3600) return `${Math.round(estimatedRemainingSeconds / 60)} minutes`;
+    return `${Math.round(estimatedRemainingSeconds / 3600)} hours`;
   };
 
   const CSV_HEADERS = [
@@ -252,13 +265,21 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
 
     const batchId = new Date().getTime().toString();
     const startTime = Date.now();
+    
+    // Determine batch size based on total items
+    let batchSize = 50; // Default for small imports
+    if (items.length > 1000) batchSize = 100;
+    if (items.length > 5000) batchSize = 200;
+    if (items.length > 10000) batchSize = 500;
+
     const status: ImportStatus = {
       total: items.length,
       processed: 0,
       successful: 0,
       failed: 0,
       estimatedTimeRemaining: 'Calculating...',
-      startTime
+      startTime,
+      batchSize
     };
 
     // Reset cancel flag
@@ -270,52 +291,72 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     const signal = abortControllerRef.current.signal;
 
     try {
-      for (let i = 0; i < items.length; i++) {
+      // Process items in batches for better performance
+      for (let i = 0; i < items.length; i += batchSize) {
         // Check if import has been cancelled
         if (importCancelledRef.current || signal.aborted) {
           setError('Import cancelled by user');
           break;
         }
 
-        try {
-          // Verify session is still valid periodically (every 50 items)
-          if (i % 50 === 0) {
-            const isStillValid = await verifySession();
-            if (!isStillValid) {
-              throw new Error('Your session has expired. Please refresh the page to continue.');
-            }
+        // Verify session every few batches
+        if (i % (batchSize * 5) === 0 && i > 0) {
+          const isStillValid = await verifySession();
+          if (!isStillValid) {
+            throw new Error('Your session has expired. Please refresh the page to continue.');
           }
+        }
 
-          validateRow(items[i], i);
-
-          const { error: insertError } = await supabase
-            .from('price_analysis')
-            .insert({
-              ...items[i],
+        // Process current batch
+        const batch = items.slice(i, Math.min(i + batchSize, items.length));
+        const validBatch = [];
+        
+        // Validate each item in the batch
+        for (let j = 0; j < batch.length; j++) {
+          try {
+            validateRow(batch[j], i + j);
+            validBatch.push({
+              ...batch[j],
               upload_batch_id: batchId,
               created_by: user.id
             });
+          } catch (err) {
+            console.error('Validation error:', err);
+            status.failed++;
+          }
+        }
+
+        // Insert valid items
+        if (validBatch.length > 0) {
+          const { error: insertError } = await supabase
+            .from('price_analysis')
+            .insert(validBatch);
 
           if (insertError) {
             if (insertError.message.includes('JWT')) {
               throw new Error('Your session has expired. Please refresh the page to continue.');
             }
-            throw insertError;
-          }
-
-          status.successful++;
-        } catch (err) {
-          console.error('Import error:', err);
-          status.failed++;
-          
-          // If it's a session error, stop the import
-          if (err.message && err.message.includes('session has expired')) {
-            throw err;
+            console.error('Insert error:', insertError);
+            status.failed += validBatch.length;
+          } else {
+            status.successful += validBatch.length;
           }
         }
         
-        status.processed++;
-        status.estimatedTimeRemaining = calculateTimeRemaining(status.processed, status.total, startTime);
+        status.processed += batch.length;
+        
+        // Update estimated time remaining
+        const elapsedSeconds = (Date.now() - startTime) / 1000;
+        if (elapsedSeconds > 0) {
+          status.processingSpeed = status.processed / elapsedSeconds;
+          status.estimatedTimeRemaining = calculateTimeRemaining(
+            status.processed, 
+            status.total, 
+            startTime, 
+            status.processingSpeed
+          );
+        }
+        
         setStatus({ ...status });
 
         // Add a small delay to allow UI updates and cancellation checks
@@ -508,7 +549,7 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             <h3 className="font-medium text-gray-800">Import Progress</h3>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">
-                {status.processed} of {status.total} items
+                {status.processed.toLocaleString()} of {status.total.toLocaleString()} items
               </span>
               <span className="text-sm text-blue-600">
                 Est. time remaining: {status.estimatedTimeRemaining}
@@ -527,14 +568,14 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             <div className="flex items-center gap-2 text-green-600">
               <AlertCircle size={16} />
               <span className="text-sm">
-                {status.successful} items imported successfully
+                {status.successful.toLocaleString()} items imported successfully
               </span>
             </div>
             {status.failed > 0 && (
               <div className="flex items-center gap-2 text-red-600">
                 <AlertCircle size={16} />
                 <span className="text-sm">
-                  {status.failed} items failed to import
+                  {status.failed.toLocaleString()} items failed to import
                 </span>
               </div>
             )}
