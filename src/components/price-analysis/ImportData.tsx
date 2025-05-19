@@ -13,6 +13,7 @@ interface ImportStatus {
   startTime?: number;
   processingSpeed?: number; // Items per second
   batchSize?: number;
+  errors?: string[];
 }
 
 const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
@@ -80,7 +81,8 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
                     successful: 0,
                     failed: 0,
                     estimatedTimeRemaining: 'Calculating...',
-                    batchSize
+                    batchSize,
+                    errors: []
                   });
                 }
               });
@@ -214,8 +216,13 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
 
     // Check required fields
     for (const field of requiredFields) {
-      if (!row[field]) {
-        throw new Error(`Row ${rowIndex + 1}: Missing required field: ${field}`);
+      if (!row[field] || row[field].trim() === '') {
+        const errorMessage = `Row ${rowIndex + 1}: Missing or empty required field: ${field}. Please ensure all required fields have values.`;
+        setStatus(prev => ({
+          ...prev!,
+          errors: [...(prev?.errors || []), errorMessage]
+        }));
+        throw new Error(errorMessage);
       }
     }
 
@@ -234,7 +241,12 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         const numValue = parseFloat(cleanValue);
         
         if (isNaN(numValue)) {
-          throw new Error(`Row ${rowIndex + 1}: Invalid numeric value for ${field}: ${row[field]}`);
+          const errorMessage = `Row ${rowIndex + 1}: Invalid numeric value for ${field}: ${row[field]}. Please ensure the value is a valid number.`;
+          setStatus(prev => ({
+            ...prev!,
+            errors: [...(prev?.errors || []), errorMessage]
+          }));
+          throw new Error(errorMessage);
         }
         
         // Update the row with the cleaned numeric value
@@ -263,7 +275,12 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
 
       // Validate the calculated value
       if (row.total_commercial_sales < 0) {
-        throw new Error(`Row ${rowIndex + 1}: Total commercial sales cannot be negative (${row.total_commercial_sales})`);
+        const errorMessage = `Row ${rowIndex + 1}: Total commercial sales cannot be negative (${row.total_commercial_sales}). Please check your input values.`;
+        setStatus(prev => ({
+          ...prev!,
+          errors: [...(prev?.errors || []), errorMessage]
+        }));
+        throw new Error(errorMessage);
       }
     }
 
@@ -307,7 +324,8 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       failed: 0,
       estimatedTimeRemaining: 'Calculating...',
       startTime,
-      batchSize
+      batchSize,
+      errors: []
     };
 
     // Reset cancel flag
@@ -608,6 +626,25 @@ const ImportData: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
               </div>
             )}
           </div>
+
+          {status.errors && status.errors.length > 0 && (
+            <div className="mt-4 p-4 bg-red-50 rounded-lg">
+              <h4 className="text-sm font-medium text-red-800 mb-2">Import Errors:</h4>
+              <ul className="text-sm text-red-700 space-y-1">
+                {status.errors.slice(0, 5).map((error, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <AlertCircle size={14} className="mt-1 flex-shrink-0" />
+                    <span>{error}</span>
+                  </li>
+                ))}
+                {status.errors.length > 5 && (
+                  <li className="text-red-600 font-medium">
+                    ...and {status.errors.length - 5} more errors
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
 
           {importing && !cancelImport && (
             <div className="mt-4 flex justify-center">
